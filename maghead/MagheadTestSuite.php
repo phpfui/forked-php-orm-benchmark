@@ -103,7 +103,7 @@ class MagheadTestSuite extends AbstractTestSuite
             ->greaterThan('id', $this->authors[array_rand($this->authors)]->id)
             ->or()
             ->equal('(first_name || last_name)', 'John Doe');
-        $authors->count();
+        $authors->queryCount();
 	}
 
 	function runHydrate($i)
