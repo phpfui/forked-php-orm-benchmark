@@ -1,0 +1,7 @@
+{
+    "require": {
+        "maghead/maghead": "4.0.x-dev",
+        "corneltek/codegen": "@dev",
+        "corneltek/sqlbuilder": "@dev"
+    }
+}
