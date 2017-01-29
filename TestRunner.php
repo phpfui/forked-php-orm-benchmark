@@ -7,6 +7,8 @@ $separator = "|                                  |        |        |        |   
 
 passthru('php raw_pdo/TestRunner.php');
 echo $separator;
+passthru('php maghead/TestRunner.php');
+echo $separator;
 passthru('php lessql/TestRunner.php');
 echo $separator;
 passthru('php yii1_m/TestRunner.php');
