@@ -35,11 +35,46 @@ Test Scenarios
 Results
 -------
 
-The reference is the PDOTestSuite (the number of tests is adjusted to make raw PDO score about 100 to each test). For the ORMs, the smaller score is the better (i. e. the faster).
+The reference is the PDOTestSuite (the number of tests is adjusted to make raw
+PDO score about 100 to each test). For the ORMs, the smaller score is the
+better (i. e. the faster).
 
-(updated 2015-Dec-07)
+## PHP CLI 7.1.0
+
+(updated 2017-Feb-1)
+
+| Library                          | Insert | findPk | complex| hydrate|  with  | memory usage |  time  |
+| --------------------------------:| ------:| ------:| ------:| ------:| ------:| ------------:| ------:|
+|                              PDO |     24 |      5 |     10 |     56 |    184 |    1,699,136 |   0.28 |
+|                                  |        |        |        |        |        |              |        |
+|                          Maghead |     91 |      1 |     56 |     95 |    228 |    8,388,608 |   0.48 |
+|                                  |        |        |        |        |        |              |        |
+|                           LessQL |    102 |     26 |    330 |    142 |    175 |    7,990,728 |   0.78 |
+|                                  |        |        |        |        |        |              |        |
+|                             YiiM |    172 |     20 |    309 |     95 |    306 |    6,291,456 |   0.92 |
+|                    YiiMWithCache |    160 |     21 |    308 |    100 |    304 |    6,291,456 |   0.91 |
+|                                  |        |        |        |        |        |              |        |
+|                            Yii2M |    316 |     40 |    293 |    160 |    340 |    6,291,456 |   1.17 |
+|                Yii2MArrayHydrate |    305 |     42 |    315 |    100 |    291 |    6,291,456 |   1.07 |
+|               Yii2MScalarHydrate |    304 |     43 |    296 |    107 |    177 |    6,291,456 |   0.94 |
+|                                  |        |        |        |        |        |              |        |
+|                         Propel20 |    140 |     16 |    410 |    287 |    413 |    8,388,608 |   1.27 |
+|                Propel20WithCache |    111 |     10 |    363 |    247 |    336 |    8,388,608 |   1.08 |
+|           Propel20FormatOnDemand |     96 |     11 |    366 |    223 |    334 |    8,388,608 |   1.04 |
+|                                  |        |        |        |        |        |              |        |
+|                        DoctrineM |    183 |     38 |    311 |    227 |    220 |   18,874,368 |   1.02 |
+|               DoctrineMWithCache |    192 |     45 |    310 |    237 |    233 |   18,874,368 |   1.05 |
+|            DoctrineMArrayHydrate |    178 |     45 |    292 |    136 |    162 |   16,777,216 |   0.86 |
+|           DoctrineMScalarHydrate |    178 |     40 |    296 |    119 |    136 |   16,777,216 |   0.81 |
+|          DoctrineMWithoutProxies |    168 |     40 |    320 |    172 |    352 |   16,777,216 |   1.09 |
+|                                  |        |        |        |        |        |              |        |
+|                         Eloquent |    367 |     54 |    373 |    157 |    311 |    8,388,608 |   1.28 |
+|             EloquentWithoutEvent |    313 |     42 |    377 |    157 |    282 |    8,388,608 |   1.18 |
+
 
 ## PHP CLI 5.6.4 with opcode cache
+
+(updated 2015-Dec-07)
 
 | Library                          | Insert | findPk | complex| hydrate|  with  | memory usage |  time  |
 | --------------------------------:| ------:| ------:| ------:| ------:| ------:| ------------:| ------:|
@@ -69,6 +104,8 @@ The reference is the PDOTestSuite (the number of tests is adjusted to make raw P
 
 ## HHVM CLI 3.10.1 (Corresponding roughly to an up-to-date PHP 5.6)
 
+(updated 2015-Dec-07)
+
 | Library                          | Insert | findPk | complex| hydrate|  with  | memory usage |  time  |
 | --------------------------------:| ------:| ------:| ------:| ------:| ------:| ------------:| ------:|
 |                              PDO |     54 |     30 |      0 |     37 |     92 |      783,680 |   0.23 |
@@ -95,33 +132,6 @@ The reference is the PDOTestSuite (the number of tests is adjusted to make raw P
 |                         Eloquent |    589 |    273 |      0 |     98 |    203 |   14,652,488 |   1.53 |
 |             EloquentWithoutEvent |    547 |    264 |      0 |     99 |    206 |   14,572,112 |   1.45 |   
 
-## PHP CLI 7.0.0 GA
-
-| Library                          | Insert | findPk | complex| hydrate|  with  | memory usage |  time  |
-| --------------------------------:| ------:| ------:| ------:| ------:| ------:| ------------:| ------:|
-|                              PDO |     38 |     36 |      0 |     33 |     86 |    1,720,432 |   0.20 |
-|                                  |        |        |        |        |        |              |        |
-|                           LessQL |     80 |     80 |      0 |     64 |     80 |   10,109,208 |   0.32 |
-|                                  |        |        |        |        |        |              |        |
-|                             YiiM |    128 |     76 |      0 |     53 |    147 |    6,291,456 |   0.45 |
-|                    YiiMWithCache |    109 |     73 |      0 |     50 |    150 |    6,291,456 |   0.42 |
-|                                  |        |        |        |        |        |              |        |
-|                            Yii2M |    246 |    125 |      0 |     75 |    113 |    8,388,608 |   0.64 |
-|                Yii2MArrayHydrate |    233 |    128 |      0 |     63 |    104 |    8,388,608 |   0.60 |
-|               Yii2MScalarHydrate |    235 |    119 |      0 |     50 |     50 |    8,388,608 |   0.51 |
-|                                  |        |        |        |        |        |              |        |
-|                         Propel20 |    142 |     74 |      0 |    163 |    190 |    6,291,456 |   0.63 |
-|                Propel20WithCache |     86 |     41 |      0 |    124 |    141 |    6,291,456 |   0.44 |
-|           Propel20FormatOnDemand |     85 |     43 |      0 |    118 |    138 |    6,291,456 |   0.44 |
-|                                  |        |        |        |        |        |              |        |
-|                        DoctrineM |    120 |    150 |      0 |    189 |    122 |   16,777,216 |   0.97 |
-|               DoctrineMWithCache |    118 |    146 |      0 |    194 |    112 |   16,777,216 |   0.96 |
-|            DoctrineMArrayHydrate |    121 |    144 |      0 |    146 |     85 |   16,777,216 |   0.90 |
-|           DoctrineMScalarHydrate |    118 |    235 |      0 |    183 |     91 |   16,777,216 |   1.01 |
-|          DoctrineMWithoutProxies |    120 |    151 |      0 |    170 |    190 |   16,777,216 |   1.06 |
-|                                  |        |        |        |        |        |              |        |
-|                         Eloquent |    209 |    137 |      0 |     84 |    137 |    8,388,608 |   0.65 |
-|             EloquentWithoutEvent |    221 |    148 |      0 |     85 |    144 |    8,388,608 |   0.66 |
 
 ## HHVM 3.11.x (Corresponding roughly to an up-to-date PHP 7.0)
 
