@@ -1,0 +1,62 @@
+{
+    "_readme": [
+        "This file locks the dependencies of your project to a known state",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "This file is @generated automatically"
+    ],
+    "content-hash": "3c851cbc0ec1bd70a06dee76d18858dd",
+    "packages": [
+        {
+            "name": "php-activerecord/php-activerecord",
+            "version": "dev-sqlite-memory-support",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/claytonrcarter/php-activerecord.git",
+                "reference": "68c87afea7353e884ecbf884fcdce7252aac3c7f"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/claytonrcarter/php-activerecord/zipball/68c87afea7353e884ecbf884fcdce7252aac3c7f",
+                "reference": "68c87afea7353e884ecbf884fcdce7252aac3c7f",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "require-dev": {
+                "pear/log": "~1.12",
+                "pear/pear_exception": "1.0-beta1",
+                "phpunit/phpunit": "4.*"
+            },
+            "type": "library",
+            "autoload": {
+                "files": [
+                    "ActiveRecord.php"
+                ]
+            },
+            "license": [
+                "MIT"
+            ],
+            "description": "php-activerecord is an open source ORM library based on the ActiveRecord pattern.",
+            "homepage": "http://www.phpactiverecord.org/",
+            "keywords": [
+                "activerecord",
+                "orm"
+            ],
+            "support": {
+                "source": "https://github.com/claytonrcarter/php-activerecord/tree/sqlite-memory-support"
+            },
+            "time": "2016-08-18 09:49:16"
+        }
+    ],
+    "packages-dev": [],
+    "aliases": [],
+    "minimum-stability": "stable",
+    "stability-flags": {
+        "php-activerecord/php-activerecord": 20
+    },
+    "prefer-stable": false,
+    "prefer-lowest": false,
+    "platform": [],
+    "platform-dev": []
+}

@@ -1,0 +1,11 @@
+{
+  "repositories": [
+      {
+          "type": "vcs",
+          "url": "https://github.com/claytonrcarter/php-activerecord"
+      }
+  ],
+  "require": {
+    "php-activerecord/php-activerecord": "dev-sqlite-memory-support"
+  }
+}

@@ -15,6 +15,8 @@ passthru('php yii1_m/TestRunner.php');
 echo $separator;
 passthru('php yii2_m/TestRunner.php');
 echo $separator;
+passthru('php php_activerecord/TestRunner.php');
+echo $separator;
 // Fuel is broken - "No composer autoloader found. Please run composer to install the FuelPHP framework dependencies first!"
 //passthru('php fuel_173/TestRunner.php');
 //echo $separator;
