@@ -1,0 +1,50 @@
+language: php
+services:
+- memcached
+php:
+- 7.0
+- 7.1
+# - hhvm
+env:
+  - DB=mysql                         # only database tests against mysql
+  - DB=sqlite    # only database tests against postgresql
+  - DB=pgsql
+addons:
+  postgresql: "9.3"
+install:
+  - rm -rf vendor/corneltek/serializerkit
+  - echo "extension = memcached.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - phpenv config-add tests/php.ini
+  - phpenv rehash
+  - echo 'date.timezone = "Asia/Taipei"' >> ~/.phpenv/versions/$(phpenv version-name)/etc/conf.d/travis.ini
+  - travis_retry composer self-update
+  - travis_retry composer require "satooshi/php-coveralls" "^1" --no-update --dev
+  - travis_retry composer install
+before_script:
+  - psql -c "create database testing;" -U postgres
+  - mysql -uroot -e "create database testing charset utf8;"
+  - cp -v db/config/database.travis-ci.yml db/config/database.yml
+  - php bin/maghead build-conf -f db/config/database.yml
+  # - php bin/maghead db create -D=$DB
+  - php bin/maghead schema build -f
+  - php bin/maghead schema build Maghead\\Model\\MetadataSchema
+  - php bin/maghead schema build -f src # build meta model class
+  - php bin/maghead sql --rebuild -D=$DB
+script:
+  - phpunit -c phpunit.xml.dist
+after_success:
+  - php vendor/bin/coveralls -v
+matrix:
+  fast_finish: true
+  allow_failures:
+  - php: hhvm
+# matrix:
+#   exclude:
+#     - php: hhvm
+#       env: DB=pgsql DB_USER=postgres DB_NAME=postgres  # driver currently unsupported by HHVM
+#     - php: hhvm
+#       env: DB=sqlite # some issues at the moment
+cache:
+  apt: true
+  directories:
+  - vendor

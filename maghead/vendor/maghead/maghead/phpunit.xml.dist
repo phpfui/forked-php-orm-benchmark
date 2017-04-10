@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<phpunit bootstrap="tests/bootstrap.php"
+         backupGlobals="false"
+         colors="true"
+         stopOnFailure="false"
+         stopOnError="false"
+         verbose="true">
+  <php>
+
+    <!-- configuration for mysql -->
+    <env name="DB_MYSQL_DSN" value="mysql:dbname=testing"/>
+    <env name="DB_MYSQL_USER" value="root"/>
+    <!-- <env name="DB_MYSQL_PASS" value="testing"/> -->
+
+    <!-- configuration for pgsql -->
+    <env name="DB_PGSQL_DSN" value="pgsql:dbname=testing"/>
+    <env name="DB_PGSQL_USER" value="postgres"/>
+    <!--<env name="DB_PGSQL_PASS" value="postgres"/>-->
+
+    <env name="DB_SQLITE_DSN" value="sqlite::memory:"/>
+
+    <!--
+      <env name="XHPROF_ROOT" value="/Users/c9s/src/php/xhprof"/>
+      <env name="XHPROF_HOST" value="xhprof.dev"/>
+    -->
+  </php>
+
+  <filter>
+    <whitelist>
+        <directory suffix=".php">src/</directory>
+    </whitelist>
+  </filter>
+
+  <groups>
+    <exclude>
+      <group>profile</group>
+    </exclude>
+  </groups>
+
+  <testsuites>
+    <testsuite name="All">
+      <!-- Run all apps tests before anyother tests -->
+      <directory suffix="Test.php">tests/apps</directory>
+      <directory suffix="Test.php">tests</directory>
+
+      <!-- Command Test affect all configloader singleton instance -->
+      <exclude suffix="Test.php">tests/Commands</exclude>
+    </testsuite>
+
+    <testsuite name="Model">
+      <directory suffix="Test.php">tests/ModelTest</directory>
+    </testsuite>
+
+    <testsuite name="PageApp">
+      <directory suffix="Test.php">tests/apps/PageApp</directory>
+    </testsuite>
+
+    <testsuite name="StoreApp">
+      <directory suffix="Test.php">tests/apps/StoreApp</directory>
+    </testsuite>
+
+    <testsuite name="AuthorBooks">
+      <directory suffix="Test.php">tests/apps/AuthorBooks</directory>
+    </testsuite>
+
+    <testsuite name="Schema">
+      <directory suffix="Test.php">tests/Schema</directory>
+    </testsuite>
+  </testsuites>
+
+  <logging>
+    <log type="tap" target="build/logs/report.tap" />
+    <log type="junit" target="build/logs/report.junit.xml" />
+    <log type="coverage-html" target="build/logs/coverage" charset="UTF-8" yui="true" highlight="true" />
+    <log type="coverage-text" target="build/logs/coverage.txt" />
+    <log type="coverage-clover" target="build/logs/clover.xml" />
+  </logging>
+</phpunit>
