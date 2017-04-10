@@ -1,0 +1,27 @@
+#!/bin/bash
+onion --debug compile \
+    --lib src \
+    --lib vendor/corneltek/cascading-attribute/src \
+    --lib vendor/corneltek/cliframework/src \
+    --lib vendor/corneltek/configkit/src \
+    --lib vendor/corneltek/fileutil/src \
+    --lib vendor/corneltek/dbutil/src \
+    --lib vendor/corneltek/getoptionkit/src \
+    --lib vendor/corneltek/serializerkit/src \
+    --lib vendor/corneltek/sqlbuilder/src \
+    --lib vendor/corneltek/universal/src \
+    --lib vendor/corneltek/universal-cache/src \
+    --lib vendor/corneltek/validationkit/src \
+    --lib vendor/symfony/yaml \
+    --lib vendor/pimple/pimple/src \
+    --lib vendor/doctrine/inflector/lib \
+    --exclude "Test.php$" \
+    --exclude "Tests/Fixtures" \
+    --exclude ".git" \
+    --exclude "composer.json$" \
+    --classloader \
+    --bootstrap scripts/lazy.emb.php \
+    --executable \
+    --output lazy.phar
+mv lazy.phar lazy
+chmod +x lazy

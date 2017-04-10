@@ -1,0 +1,54 @@
+<?xml version="1.0"?>
+<package xmlns="http://pear.php.net/dtd/package-2.0" xmlns:tasks="http://pear.php.net/dtd/tasks-1.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" packagerversion="1.4.10" version="2.0" xsi:schemaLocation="http://pear.php.net/dtd/tasks-1.0               http://pear.php.net/dtd/tasks-1.0.xsd               http://pear.php.net/dtd/package-2.0               http://pear.php.net/dtd/package-2.0.xsd">
+  <name>CascadingAttribute</name>
+  <channel>pear.corneltek.com</channel>
+  <summary>Cascading Attributes</summary>
+  <description>Cascading Attributes</description>
+  <lead>
+    <name>Yo-An Lin</name>
+    <user/>
+    <email>cornelius.howl@gmail.com</email>
+    <active>yes</active>
+  </lead>
+  <date>2012-09-22</date>
+  <time>01:17:36</time>
+  <version>
+    <release>1.2.0</release>
+    <api>1.2.0</api>
+  </version>
+  <stability>
+    <release>stable</release>
+    <api>stable</api>
+  </stability>
+  <license>PHP</license>
+  <notes>-</notes>
+  <contents>
+    <dir name="/">
+      <file name="tests/bootstrap.php" role="test" md5sum="1b9228bee72eefe4d41245ba533c35cb"/>
+      <file name="tests/CascadingAttributeTest.php" role="test" md5sum="e1d879b8bb26386e41d5971a7d9cb167"/>
+      <file name="src/CascadingAttribute.php" role="php" md5sum="d24edb79475034b66e76b47b19cad182"/>
+    </dir>
+  </contents>
+  <dependencies>
+    <required>
+      <php>
+        <min>5.3</min>
+      </php>
+      <pearinstaller>
+        <min>1.4</min>
+      </pearinstaller>
+      <package>
+        <name>Universal</name>
+        <channel>pear.corneltek.com</channel>
+        <min>0.0.0</min>
+      </package>
+    </required>
+  </dependencies>
+  <phprelease>
+    <filelist>
+      <install name="tests/bootstrap.php" as="bootstrap.php"/>
+      <install name="tests/CascadingAttributeTest.php" as="CascadingAttributeTest.php"/>
+      <install name="src/CascadingAttribute.php" as="CascadingAttribute.php"/>
+    </filelist>
+  </phprelease>
+</package>

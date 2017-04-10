@@ -17,9 +17,8 @@ passthru('php yii2_m/TestRunner.php');
 echo $separator;
 passthru('php php_activerecord/TestRunner.php');
 echo $separator;
-// Fuel is broken - "No composer autoloader found. Please run composer to install the FuelPHP framework dependencies first!"
-//passthru('php fuel_173/TestRunner.php');
-//echo $separator;
+passthru('php fuel_18/TestRunner.php');
+echo $separator;
 // phpixie is broken - "Fatal error: Uncaught exception 'PHPixie\ORM\Exception\Plan' with message 'Result used as update source must contain a single item.' in /repo/phpixie/vendor/phpixie/orm/src/PHPixie/ORM/Steps/Step/Update/Map.php:21"
 #passthru('php phpixie/TestRunner.php');
 #echo $separator;
