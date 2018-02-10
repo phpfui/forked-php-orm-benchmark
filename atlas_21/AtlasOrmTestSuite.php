@@ -42,13 +42,12 @@ class AtlasOrmTestSuite extends AbstractTestSuite
 
     function beginTransaction()
     {
-        // Atlas does writes in transactions
-        //$this->atlasContainer->getConnectionLocator()->getDefault()->beginTransaction();
+        $this->transaction = $this->atlas->newTransaction();
     }
 
     function commit()
     {
-        //$this->atlasContainer->getConnectionLocator()->getDefault()->commit();
+        $this->transaction->exec();
     }
 
     function runAuthorInsertion($i)
@@ -57,7 +56,7 @@ class AtlasOrmTestSuite extends AbstractTestSuite
             'first_name' => 'John' . $i,
             'last_name'  => 'Doe' . $i,
         ]);
-        $this->atlas->insert($author);
+        $this->transaction->insert($author);
         $this->authors[] = $this->con->lastInsertId();
     }
 
@@ -69,7 +68,7 @@ class AtlasOrmTestSuite extends AbstractTestSuite
             'price'     => $i,
             'author_id' => $this->authors[array_rand($this->authors)],
         ]);
-        $this->atlas->insert($book);
+        $this->transaction->insert($book);
         $this->books[] = $this->con->lastInsertId();
 
     }
