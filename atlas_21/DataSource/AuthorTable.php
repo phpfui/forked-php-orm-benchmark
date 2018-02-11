@@ -104,11 +104,6 @@ class AuthorTable extends AbstractTable
      */
     public function getColDefaults()
     {
-        return [
-            'id' => null,
-            'first_name' => null,
-            'last_name' => null,
-            'email' => null,
-        ];
+        return [];
     }
 }

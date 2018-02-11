@@ -110,12 +110,6 @@ class BookTable extends AbstractTable
      */
     public function getColDefaults()
     {
-        return [
-            'id' => null,
-            'author_id' => null,
-            'title' => null,
-            'isbn' => null,
-            'price' => null,
-        ];
+        return [];
     }
 }

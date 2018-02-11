@@ -75,7 +75,7 @@ class AtlasOrmTestSuite extends AbstractTestSuite
 
     function runPKSearch($i)
     {
-        $author = $this->atlas->fetchRecord(AuthorMapper::class, 1);
+        $author = $this->atlas->fetchRecord(AuthorMapper::class, $i);
     }
 
     function runHydrate($i)
