@@ -2,13 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="f63aa050-8d85-4566-8922-3884db300d35" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/php-orm-benchmark.iml" afterPath="$PROJECT_DIR$/.idea/php-orm-benchmark.iml" />
-      <change beforePath="$PROJECT_DIR$/.idea/php.xml" afterPath="$PROJECT_DIR$/.idea/php.xml" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" afterPath="$PROJECT_DIR$/.idea/workspace.xml" />
-      <change beforePath="$PROJECT_DIR$/atlas_21/AtlasOrmTestSuite.php" afterPath="$PROJECT_DIR$/atlas_21/AtlasOrmTestSuite.php" />
-      <change beforePath="$PROJECT_DIR$/atlas_21/DataSource/AuthorTable.php" afterPath="$PROJECT_DIR$/atlas_21/DataSource/AuthorTable.php" />
-      <change beforePath="$PROJECT_DIR$/atlas_21/DataSource/BookTable.php" afterPath="$PROJECT_DIR$/atlas_21/DataSource/BookTable.php" />
-      <change beforePath="$PROJECT_DIR$/eloquent/EloquentTestSuite.php" afterPath="$PROJECT_DIR$/eloquent/EloquentTestSuite.php" />
+      <change beforePath="$PROJECT_DIR$/README.md" afterPath="$PROJECT_DIR$/README.md" />
     </list>
     <ignored path="php-orm-benchmark.iws" />
     <ignored path=".idea/workspace.xml" />
@@ -31,14 +25,27 @@
   </component>
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="AtlasOrmTestSuite.php" pinned="false" current-in-tab="true">
+      <file leaf-file-name="AtlasOrmTestSuite.php" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/atlas_21/AtlasOrmTestSuite.php">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="552">
-              <caret line="77" column="64" lean-forward="true" selection-start-line="77" selection-start-column="64" selection-end-line="77" selection-end-column="67" />
+            <state relative-caret-position="708">
+              <caret line="111" column="1" lean-forward="false" selection-start-line="111" selection-start-column="1" selection-end-line="111" selection-end-column="1" />
               <folding>
                 <element signature="e#7#36#0#PHP" expanded="true" />
               </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file leaf-file-name="README.md" pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/README.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+            <state split_layout="SPLIT">
+              <first_editor relative-caret-position="746">
+                <caret line="80" column="105" lean-forward="false" selection-start-line="80" selection-start-column="105" selection-end-line="80" selection-end-column="105" />
+                <folding />
+              </first_editor>
+              <second_editor />
             </state>
           </provider>
         </entry>
@@ -131,7 +138,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/propel_dm/models/models/Publisher.php" />
         <option value="$PROJECT_DIR$/propel_dm/models/Publisher.php" />
         <option value="$PROJECT_DIR$/propel_dm/models/Map/PublisherEntityMap.php" />
         <option value="$PROJECT_DIR$/propel_dm/schema.xml" />
@@ -182,6 +188,7 @@
         <option value="$PROJECT_DIR$/atlas_21/DataSource/AuthorTable.php" />
         <option value="$PROJECT_DIR$/atlas_21/vendor/atlas/orm/src/Table/AbstractTable.php" />
         <option value="$PROJECT_DIR$/atlas_21/AtlasOrmTestSuite.php" />
+        <option value="$PROJECT_DIR$/README.md" />
       </list>
     </option>
   </component>
@@ -242,17 +249,6 @@
               <item name="orm-benchmark" type="2a2b976b:PhpTreeStructureProvider$1" />
               <item name="atlas_21" type="2a2b976b:PhpTreeStructureProvider$1" />
               <item name="DataSource" type="2a2b976b:PhpTreeStructureProvider$1" />
-            </path>
-            <path>
-              <item name="php-orm-benchmark" type="b2602c69:ProjectViewProjectNode" />
-              <item name="orm-benchmark" type="2a2b976b:PhpTreeStructureProvider$1" />
-              <item name="doctrine_24" type="2a2b976b:PhpTreeStructureProvider$1" />
-            </path>
-            <path>
-              <item name="php-orm-benchmark" type="b2602c69:ProjectViewProjectNode" />
-              <item name="orm-benchmark" type="2a2b976b:PhpTreeStructureProvider$1" />
-              <item name="doctrine_24" type="2a2b976b:PhpTreeStructureProvider$1" />
-              <item name="models" type="2a2b976b:PhpTreeStructureProvider$1" />
             </path>
             <path>
               <item name="php-orm-benchmark" type="b2602c69:ProjectViewProjectNode" />
@@ -368,7 +364,7 @@
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="12045000" />
+    <option name="totallyTimeSpent" value="12082000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="2576" height="1416" extended-state="0" />
@@ -453,13 +449,6 @@
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/propel_20/TestRunner.php">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="68">
-          <caret line="4" column="45" lean-forward="false" selection-start-line="4" selection-start-column="45" selection-end-line="4" selection-end-column="45" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/propel_15/TestRunner.php">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="68">
@@ -719,7 +708,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -759,7 +747,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="0">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -767,7 +754,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-1173">
           <caret line="0" column="0" lean-forward="false" selection-start-line="0" selection-start-column="0" selection-end-line="0" selection-end-column="0" />
-          <folding />
         </state>
       </provider>
     </entry>
@@ -821,11 +807,22 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/atlas_21/AtlasOrmTestSuite.php">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="552">
-          <caret line="77" column="64" lean-forward="true" selection-start-line="77" selection-start-column="64" selection-end-line="77" selection-end-column="67" />
+        <state relative-caret-position="708">
+          <caret line="111" column="1" lean-forward="false" selection-start-line="111" selection-start-column="1" selection-end-line="111" selection-end-column="1" />
           <folding>
             <element signature="e#7#36#0#PHP" expanded="true" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/README.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="SPLIT">
+          <first_editor relative-caret-position="746">
+            <caret line="80" column="105" lean-forward="false" selection-start-line="80" selection-start-column="105" selection-end-line="80" selection-end-column="105" />
+            <folding />
+          </first_editor>
+          <second_editor />
         </state>
       </provider>
     </entry>
