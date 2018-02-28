@@ -41,7 +41,7 @@ better (i. e. the faster).
 
 ## PHP CLI 7.1.0
 
-(updated 2018-Feb-111)
+(updated 2018-Feb-11)
 
 | Library                          | Insert | findPk | complex| hydrate|  with  | memory usage |  time  |
 | --------------------------------:| ------:| ------:| ------:| ------:| ------:| ------------:| ------:|
