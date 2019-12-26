@@ -2,14 +2,17 @@
 
 namespace Doctrine\Tests\ORM\Functional;
 
+use Doctrine\ORM\AbstractQuery;
 use Doctrine\Tests\Models\Company\CompanyManager;
+use Doctrine\Tests\OrmFunctionalTestCase;
+use function sprintf;
 
 /**
  * Functional Query tests.
  *
  * @author robo
  */
-class QueryDqlFunctionTest extends \Doctrine\Tests\OrmFunctionalTestCase
+class QueryDqlFunctionTest extends OrmFunctionalTestCase
 {
     protected function setUp()
     {
@@ -175,7 +178,7 @@ class QueryDqlFunctionTest extends \Doctrine\Tests\OrmFunctionalTestCase
         $this->assertEquals('Gui', $result[1]['str1']);
         $this->assertEquals('Jon', $result[2]['str1']);
         $this->assertEquals('Rom', $result[3]['str1']);
-        
+
         $this->assertEquals('amin E.', $result[0]['str2']);
         $this->assertEquals('herme B.', $result[1]['str2']);
         $this->assertEquals('than W.', $result[2]['str2']);
@@ -286,51 +289,77 @@ class QueryDqlFunctionTest extends \Doctrine\Tests\OrmFunctionalTestCase
 
     /**
      * @group DDC-1014
+     * @group DDC-2938
+     *
+     * @dataProvider dateAddSubProvider
      */
-    public function testDateAdd()
+    public function testDateAdd(string $unit, int $amount, int $delta = 0) : void
     {
-        $arg = $this->_em->createQuery("SELECT DATE_ADD(CURRENT_TIMESTAMP(), 10, 'day') AS add FROM Doctrine\Tests\Models\Company\CompanyManager m")
-                ->getArrayResult();
+        $query = sprintf(
+            'SELECT CURRENT_TIMESTAMP() as now, DATE_ADD(CURRENT_TIMESTAMP(), %d, \'%s\') AS add FROM %s m',
+            $amount,
+            $unit,
+            CompanyManager::class
+        );
 
-        $this->assertTrue(strtotime($arg[0]['add']) > 0);
+        $result = $this->_em->createQuery($query)
+                            ->setMaxResults(1)
+                            ->getSingleResult(AbstractQuery::HYDRATE_ARRAY);
 
-        $arg = $this->_em->createQuery("SELECT DATE_ADD(CURRENT_TIMESTAMP(), 10, 'month') AS add FROM Doctrine\Tests\Models\Company\CompanyManager m")
-                ->getArrayResult();
+        self::assertArrayHasKey('now', $result);
+        self::assertArrayHasKey('add', $result);
 
-        $this->assertTrue(strtotime($arg[0]['add']) > 0);
-    }
-
-    public function testDateAddSecond()
-    {
-        $dql     = "SELECT CURRENT_TIMESTAMP() now, DATE_ADD(CURRENT_TIMESTAMP(), 10, 'second') AS add FROM Doctrine\Tests\Models\Company\CompanyManager m";
-        $query   = $this->_em->createQuery($dql)->setMaxResults(1);
-        $result  = $query->getArrayResult();
-
-        $this->assertCount(1, $result);
-        $this->assertArrayHasKey('now', $result[0]);
-        $this->assertArrayHasKey('add', $result[0]);
-
-        $now  = strtotime($result[0]['now']);
-        $add  = strtotime($result[0]['add']);
-        $diff = $add - $now;
-
-        $this->assertSQLEquals(10, $diff);
+        self::assertEquals(
+            (new \DateTimeImmutable($result['now']))->modify(sprintf('+%d %s', $amount, $unit)),
+            new \DateTimeImmutable($result['add']),
+            '',
+            $delta
+        );
     }
 
     /**
      * @group DDC-1014
+     * @group DDC-2938
+     *
+     * @dataProvider dateAddSubProvider
      */
-    public function testDateSub()
+    public function testDateSub(string $unit, int $amount, int $delta = 0) : void
     {
-        $arg = $this->_em->createQuery("SELECT DATE_SUB(CURRENT_TIMESTAMP(), 10, 'day') AS add FROM Doctrine\Tests\Models\Company\CompanyManager m")
-                ->getArrayResult();
+        $query = sprintf(
+            'SELECT CURRENT_TIMESTAMP() as now, DATE_SUB(CURRENT_TIMESTAMP(), %d, \'%s\') AS sub FROM %s m',
+            $amount,
+            $unit,
+            CompanyManager::class
+        );
 
-        $this->assertTrue(strtotime($arg[0]['add']) > 0);
+        $result = $this->_em->createQuery($query)
+                            ->setMaxResults(1)
+                            ->getSingleResult(AbstractQuery::HYDRATE_ARRAY);
 
-        $arg = $this->_em->createQuery("SELECT DATE_SUB(CURRENT_TIMESTAMP(), 10, 'month') AS add FROM Doctrine\Tests\Models\Company\CompanyManager m")
-                ->getArrayResult();
+        self::assertArrayHasKey('now', $result);
+        self::assertArrayHasKey('sub', $result);
 
-        $this->assertTrue(strtotime($arg[0]['add']) > 0);
+        self::assertEquals(
+            (new \DateTimeImmutable($result['now']))->modify(sprintf('-%d %s', $amount, $unit)),
+            new \DateTimeImmutable($result['sub']),
+            '',
+            $delta
+        );
+    }
+
+    public function dateAddSubProvider() : array
+    {
+        $secondsInDay = 86400;
+
+        return [
+            'year'   => ['year', 1, $secondsInDay],
+            'month'  => ['month', 1, $secondsInDay],
+            'week'   => ['week', 1, $secondsInDay],
+            'day'    => ['day', 2, $secondsInDay],
+            'hour'   => ['hour', 1, 3600],
+            'minute' => ['minute', 1, 60],
+            'second' => ['second', 10, 10],
+        ];
     }
 
     /**

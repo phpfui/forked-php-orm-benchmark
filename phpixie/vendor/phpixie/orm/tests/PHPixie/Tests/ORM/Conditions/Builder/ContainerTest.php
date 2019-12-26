@@ -15,10 +15,10 @@ class ContainerTest extends \PHPixie\Tests\Database\Conditions\Builder\Container
     
     public function setUp()
     {
-        $this->ormBuilder = $this->quickMock('\PHPixie\ORM\Builder', array(), array(), '', false);
+        $this->ormBuilder = $this->quickMock('\PHPixie\ORM\Builder', array());
         $this->conditions = new \PHPixie\ORM\Conditions($this->ormBuilder);
-        $this->maps = $this->getMock('\PHPixie\ORM\Maps', array(), array(), '', false);
-        $this->relationshipMap = $this->getMock('\PHPixie\ORM\Maps\Map\Relationship', array(), array(), '', false);
+        $this->maps = $this->quickMock('\PHPixie\ORM\Maps');
+        $this->relationshipMap = $this->quickMock('\PHPixie\ORM\Maps\Map\Relationship', array());
 
         $this->ormBuilder
             ->expects($this->any())
@@ -40,7 +40,7 @@ class ContainerTest extends \PHPixie\Tests\Database\Conditions\Builder\Container
                     'fairy' => 'pixie'
                 );
                 
-                $side = $self->getMock('\PHPixie\ORM\Relationships\Relationship\Side\Relationship', array());
+                $side = $self->quickMock('\PHPixie\ORM\Relationships\Relationship\Side\Relationship');
                 $side
                     ->expects($this->any())
                     ->method('relatedModelName')
@@ -351,7 +351,7 @@ class ContainerTest extends \PHPixie\Tests\Database\Conditions\Builder\Container
     
     protected function getInItem($modelName)
     {
-        $item = $this->getMock('\PHPixie\ORM\Conditions\Condition\In\Item', array());
+        $item = $this->quickMock('\PHPixie\ORM\Conditions\Condition\In\Item');
         $item
             ->expects($this->any())
             ->method('modelName')

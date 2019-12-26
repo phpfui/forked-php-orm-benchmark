@@ -1,48 +1,16 @@
-- removing relateds; cf. https://github.com/atlasphp/Atlas.Orm/issues/62
+- soft-deletion by marking a field using method on a custom Record, then have
+  the Mapper add "where('soft_deleted = ', false)";
 
-- convert field to object and back again, e.g. Date object -- should be a
-  be a method on a custom Record
+- overriding Row::assertValidValue() (e.g. to allow objects in Rows) -- might
+  also be a be a method on a custom Record
 
-- soft-deletion by marking a field -- method on a custom Record
+- Table Events and Mapper Events.
 
-- multiple mappers using a single table
+    - update *other* records on insert/update/delete; e.g. trees/lists/etc
 
-- writing custom mapper methods
+- Automatic validation approaches
 
-- Single-table inheritance. This is stretching things a bit, since STI maps
-  a *table* to an *inheritance structure*, which is probably more in the realm
-  of domain logic (and a repository system) instead of persistence logic.
-  However, given a `content` table with a `type` column ...
+    - check the database for presence/nonpresence of values (uniqueness) -- part
+      of validation
 
-        ```
-        <?php
-        namespace DataSource\Content;
-
-        use Atlas\Orm\Mapper\Record;
-
-        class ContentRecord extends Record {}
-
-        class WikiRecord extends ContentRecord {}
-
-        class BlogRecord extends ContentRecord {}
-
-        class ThreadRecord extends ContentRecord {}
-
-        class ReplyRecord extends ContentRecord {}
-
-        class ContentMapper extends AbstractMapper
-        {
-            protected function getRecordClass(RowInterface $row)
-            {
-                // 'wiki' => 'DataSource\Content\WikiRecord'
-                return 'DataSource\Content\' . ucfirst($row->type) . 'Record';
-            }
-
-            // getRecordSetClass() doesn't work the same, since there might be
-            // many different types in there.
-        }
-        ```
-
-- (I wonder if "polymorphic belongs-to" is also more in the realm of domain
-  logic than persistence logic.)
-
+- Dependency injection using the callable factory

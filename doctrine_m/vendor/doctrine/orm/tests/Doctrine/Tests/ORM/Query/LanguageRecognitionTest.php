@@ -1,11 +1,14 @@
 <?php
+
 namespace Doctrine\Tests\ORM\Query;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Query,
     Doctrine\ORM\Query\QueryException;
+use Doctrine\Tests\Mocks\MockTreeWalker;
+use Doctrine\Tests\OrmTestCase;
 
-class LanguageRecognitionTest extends \Doctrine\Tests\OrmTestCase
+class LanguageRecognitionTest extends OrmTestCase
 {
     /**
      * @var EntityManagerInterface
@@ -21,6 +24,7 @@ class LanguageRecognitionTest extends \Doctrine\Tests\OrmTestCase
     {
         try {
             $parserResult = $this->parseDql($dql);
+            $this->addToAssertionCount(1);
         } catch (QueryException $e) {
             if ($debug) {
                 echo $e->getTraceAsString() . PHP_EOL;
@@ -41,23 +45,24 @@ class LanguageRecognitionTest extends \Doctrine\Tests\OrmTestCase
                 echo $e->getMessage() . PHP_EOL;
                 echo $e->getTraceAsString() . PHP_EOL;
             }
+            $this->addToAssertionCount(1);
         }
     }
 
-    public function parseDql($dql, $hints = array())
+    public function parseDql($dql, $hints = [])
     {
         $query = $this->_em->createQuery($dql);
         $query->setHint(Query::HINT_FORCE_PARTIAL_LOAD, true);
-        $query->setDql($dql);
+        $query->setDQL($dql);
 
         foreach ($hints as $key => $value) {
         	$query->setHint($key, $value);
         }
 
-        $parser = new \Doctrine\ORM\Query\Parser($query);
+        $parser = new Query\Parser($query);
 
         // We do NOT test SQL output here. That only unnecessarily slows down the tests!
-        $parser->setCustomOutputTreeWalker('Doctrine\Tests\Mocks\MockTreeWalker');
+        $parser->setCustomOutputTreeWalker(MockTreeWalker::class);
 
         return $parser->parse();
     }
@@ -82,52 +87,54 @@ class LanguageRecognitionTest extends \Doctrine\Tests\OrmTestCase
      */
     public function testRejectsInvalidDQL($dql)
     {
-        $this->setExpectedException('\Doctrine\ORM\Query\QueryException');
+        $this->expectException(QueryException::class);
 
-        $this->_em->getConfiguration()->setEntityNamespaces(array(
+        $this->_em->getConfiguration()->setEntityNamespaces(
+            [
             'Unknown' => 'Unknown',
             'CMS' => 'Doctrine\Tests\Models\CMS'
-        ));
+            ]
+        );
 
         $this->parseDql($dql);
     }
 
     public function invalidDQL()
     {
-        return array(
+        return [
 
-            array('SELECT \'foo\' AS foo\bar FROM Doctrine\Tests\Models\CMS\CmsUser u'),
+            ['SELECT \'foo\' AS foo\bar FROM Doctrine\Tests\Models\CMS\CmsUser u'],
             /* Checks for invalid IdentificationVariables and AliasIdentificationVariables */
-            array('SELECT \foo FROM Doctrine\Tests\Models\CMS\CmsUser \foo'),
-            array('SELECT foo\ FROM Doctrine\Tests\Models\CMS\CmsUser foo\\'),
-            array('SELECT foo\bar FROM Doctrine\Tests\Models\CMS\CmsUser foo\bar'),
-            array('SELECT foo:bar FROM Doctrine\Tests\Models\CMS\CmsUser foo:bar'),
-            array('SELECT foo: FROM Doctrine\Tests\Models\CMS\CmsUser foo:'),
+            ['SELECT \foo FROM Doctrine\Tests\Models\CMS\CmsUser \foo'],
+            ['SELECT foo\ FROM Doctrine\Tests\Models\CMS\CmsUser foo\\'],
+            ['SELECT foo\bar FROM Doctrine\Tests\Models\CMS\CmsUser foo\bar'],
+            ['SELECT foo:bar FROM Doctrine\Tests\Models\CMS\CmsUser foo:bar'],
+            ['SELECT foo: FROM Doctrine\Tests\Models\CMS\CmsUser foo:'],
 
             /* Checks for invalid AbstractSchemaName */
-            array('SELECT u FROM UnknownClass u'),  // unknown
-            array('SELECT u FROM Unknown\Class u'), // unknown with namespace
-            array('SELECT u FROM \Unknown\Class u'), // unknown, leading backslash
-            array('SELECT u FROM Unknown\\\\Class u'), // unknown, syntactically bogus (duplicate \\)
-            array('SELECT u FROM Unknown\Class\ u'), // unknown, syntactically bogus (trailing \)
-            array('SELECT u FROM Unknown:Class u'), // unknown, with namespace alias
-            array('SELECT u FROM Unknown::Class u'), // unknown, with PAAMAYIM_NEKUDOTAYIM
-            array('SELECT u FROM Unknown:Class:Name u'), // unknown, with invalid namespace alias
-            array('SELECT u FROM UnknownClass: u'), // unknown, with invalid namespace alias
-            array('SELECT u FROM Unknown:Class: u'), // unknown, with invalid namespace alias
-            array('SELECT u FROM Doctrine\Tests\Models\CMS\\\\CmsUser u'), // syntactically bogus (duplicate \\)array('SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser\ u'), // syntactically bogus (trailing \)
-            array('SELECT u FROM CMS::User u'),
-            array('SELECT u FROM CMS:User: u'),
-            array('SELECT u FROM CMS:User:Foo u'),
+            ['SELECT u FROM UnknownClass u'],  // unknown
+            ['SELECT u FROM Unknown\Class u'], // unknown with namespace
+            ['SELECT u FROM \Unknown\Class u'], // unknown, leading backslash
+            ['SELECT u FROM Unknown\\\\Class u'], // unknown, syntactically bogus (duplicate \\)
+            ['SELECT u FROM Unknown\Class\ u'], // unknown, syntactically bogus (trailing \)
+            ['SELECT u FROM Unknown:Class u'], // unknown, with namespace alias
+            ['SELECT u FROM Unknown::Class u'], // unknown, with PAAMAYIM_NEKUDOTAYIM
+            ['SELECT u FROM Unknown:Class:Name u'], // unknown, with invalid namespace alias
+            ['SELECT u FROM UnknownClass: u'], // unknown, with invalid namespace alias
+            ['SELECT u FROM Unknown:Class: u'], // unknown, with invalid namespace alias
+            ['SELECT u FROM Doctrine\Tests\Models\CMS\\\\CmsUser u'], // syntactically bogus (duplicate \\)array('SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser\ u'), // syntactically bogus (trailing \)
+            ['SELECT u FROM CMS::User u'],
+            ['SELECT u FROM CMS:User: u'],
+            ['SELECT u FROM CMS:User:Foo u'],
 
             /* Checks for invalid AliasResultVariable */
-            array('SELECT \'foo\' AS \foo FROM Doctrine\Tests\Models\CMS\CmsUser u'),
-            array('SELECT \'foo\' AS \foo\bar FROM Doctrine\Tests\Models\CMS\CmsUser u'),
-            array('SELECT \'foo\' AS foo\ FROM Doctrine\Tests\Models\CMS\CmsUser u'),
-            array('SELECT \'foo\' AS foo\\\\bar FROM Doctrine\Tests\Models\CMS\CmsUser u'),
-            array('SELECT \'foo\' AS foo: FROM Doctrine\Tests\Models\CMS\CmsUser u'),
-            array('SELECT \'foo\' AS foo:bar FROM Doctrine\Tests\Models\CMS\CmsUser u'),
-        );
+            ['SELECT \'foo\' AS \foo FROM Doctrine\Tests\Models\CMS\CmsUser u'],
+            ['SELECT \'foo\' AS \foo\bar FROM Doctrine\Tests\Models\CMS\CmsUser u'],
+            ['SELECT \'foo\' AS foo\ FROM Doctrine\Tests\Models\CMS\CmsUser u'],
+            ['SELECT \'foo\' AS foo\\\\bar FROM Doctrine\Tests\Models\CMS\CmsUser u'],
+            ['SELECT \'foo\' AS foo: FROM Doctrine\Tests\Models\CMS\CmsUser u'],
+            ['SELECT \'foo\' AS foo:bar FROM Doctrine\Tests\Models\CMS\CmsUser u'],
+        ];
     }
 
     public function testSelectSingleComponentWithMultipleColumns()
@@ -568,7 +575,7 @@ class LanguageRecognitionTest extends \Doctrine\Tests\OrmTestCase
      */
     public function testCustomFunctionsReturningStringInStringPrimary()
     {
-        $this->_em->getConfiguration()->addCustomStringFunction('CC', 'Doctrine\ORM\Query\AST\Functions\ConcatFunction');
+        $this->_em->getConfiguration()->addCustomStringFunction('CC', Query\AST\Functions\ConcatFunction::class);
 
         $this->assertValidDQL("SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u WHERE CC('%', u.name) LIKE '%foo%'", true);
     }
@@ -669,7 +676,7 @@ class LanguageRecognitionTest extends \Doctrine\Tests\OrmTestCase
     {
         $this->assertValidDQL("SELECT u.name FROM Doctrine\Tests\Models\CMS\CmsUser u HAVING u.username IS NULL");
     }
-    
+
     /**
      * @group DDC-3085
      */
@@ -700,6 +707,13 @@ class LanguageRecognitionTest extends \Doctrine\Tests\OrmTestCase
     public function testNewLiteralWithSubselectExpression()
     {
         $this->assertValidDQL("SELECT new " . __NAMESPACE__ . "\\DummyStruct(u.id, 'foo', (SELECT 1 FROM Doctrine\Tests\Models\CMS\CmsUser su), true) FROM Doctrine\Tests\Models\CMS\CmsUser u");
+    }
+
+    public function testStringPrimaryAcceptsAggregateExpression() : void
+    {
+        $this->assertValidDQL(
+            'SELECT CONCAT(a.topic, MAX(a.version)) last FROM Doctrine\Tests\Models\CMS\CmsArticle a GROUP BY a'
+        );
     }
 }
 

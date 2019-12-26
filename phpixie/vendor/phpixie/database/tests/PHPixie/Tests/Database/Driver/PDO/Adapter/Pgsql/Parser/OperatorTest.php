@@ -6,6 +6,11 @@ namespace PHPixie\Tests\Database\Driver\PDO\Adapter\Pgsql\Parser;
  */
 class OperatorTest extends \PHPixie\Tests\Database\Type\SQL\Parser\OperatorTest
 {
+    /**
+     * List of expected results from parser
+     *
+     * @var array
+     */
     protected $expected = array(
         array('"a" = ?', array(1)),
         array('"a" = la', array()),
@@ -25,8 +30,58 @@ class OperatorTest extends \PHPixie\Tests\Database\Type\SQL\Parser\OperatorTest
         array('"a" BETWEEN ? AND ?', array(1, 2)),
         array('"a" NOT BETWEEN ? AND ?', array(1, 2)),
         array('"a"."b" = b', array(1)),
-        array('a + b = ?', array(1))
+        array('a + b = ?', array(1)),
+        array('"a" >> ?', array(1)),
+        array('"a" >>= ?', array(1)),
+        array('"a" << ?', array(1)),
+        array('"a" <<= ?', array(1)),
+        array('"a" && ?', array('{1}')), // single value instead of array
+        array('"a" && ?', array('{1,2,3}')),
+        array('"a" && ?', array('{1,2,3}')),
+        array('"a" @> ?', array('{1,2,3}')),
+        array('"a" @> ?', array('{1,2,3}')),
+        array('"a" <@ ?', array('{1,2,3}')),
+        array('"a" <@ ?', array('{1,2,3}')),
     );
+
+    /**
+     * @inheritdoc
+     */
+    protected function exceptionConditions()
+    {
+        return array_merge(parent::exceptionConditions(),
+            array(
+                $this->operator('a', '&&', array(array('text not supported'))),
+            )
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
+    protected function conditions()
+    {
+        return array_merge(
+            parent::conditions(),
+            array(
+                $this->operator('a', '>>', array(1)),
+                $this->operator('a', '>>=', array(1)),
+                $this->operator('a', '<<', array(1)),
+                $this->operator('a', '<<=', array(1)),
+                $this->operator('a', '&&', array(1)), // single value instead of array
+                $this->operator('a', '&&', array(array(1, 2, 3))),
+                $this->operator('a', 'overlap', array(array(1, 2, 3))),
+                $this->operator('a', '@>', array(array(1, 2, 3))),
+                $this->operator('a', 'contains', array(array(1, 2, 3))),
+                $this->operator('a', '<@', array(array(1, 2, 3))),
+                $this->operator('a', 'contained', array(array(1, 2, 3))),
+            )
+        );
+    }
+
+    /**
+     * @inheritdoc
+     */
     public function setUp()
     {
         parent::setUp();

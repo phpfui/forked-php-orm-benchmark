@@ -86,6 +86,12 @@ class Query extends \PHPixie\ORM\Conditions\Builder\Proxy
         return $this;
     }
 
+    public function orderBy($field, $direction)
+    {
+        $this->orderBy[] = $this->values->orderBy($field, $direction);
+        return $this;
+    }
+
     public function orderAscendingBy($field)
     {
         $this->orderBy[] = $this->values->orderBy($field, 'asc');
@@ -114,9 +120,9 @@ class Query extends \PHPixie\ORM\Conditions\Builder\Proxy
         return $this->container->getConditions();
     }
 
-    public function find($preload = array())
+    public function find($preload = array(), $fields = null)
     {
-        return $this->planFind($preload)->execute();
+        return $this->planFind($preload, $fields)->execute();
     }
 
     /**
@@ -124,12 +130,12 @@ class Query extends \PHPixie\ORM\Conditions\Builder\Proxy
      * @return null|Entity
      * @throws \PHPixie\ORM\Exception\Query
      */
-    public function findOne($preload = array())
+    public function findOne($preload = array(), $fields = null)
     {
         $oldLimit = $this->getLimit();
         $this->limit(1);
         
-        $loader = $this->find($preload);
+        $loader = $this->find($preload, $fields);
         
         if($oldLimit !== null)
         {
@@ -144,15 +150,20 @@ class Query extends \PHPixie\ORM\Conditions\Builder\Proxy
         return $loader->getByOffset(0);
     }
     
-    public function planFind($preload = array())
+    public function planFind($preload = array(), $fields = null)
     {
         $preloads = $this->values->preload();
         
-        foreach($preload as $item) {
-            $preloads->add($item);
+        foreach($preload as $item => $options) {
+            if(is_numeric($item)) {
+                $item = $options;
+                $options = array();
+            }
+            
+            $preloads->add($item, $options);
         }
         
-        return $this->queryMapper->mapFind($this, $preloads);
+        return $this->queryMapper->mapFind($this, $preloads, $fields);
     }
 
 

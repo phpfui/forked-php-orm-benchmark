@@ -6,7 +6,12 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'Aura\\Sql\\' => array($vendorDir . '/aura/sql/src'),
-    'Aura\\SqlQuery\\' => array($vendorDir . '/aura/sqlquery/src'),
+    'Psr\\Log\\' => array($vendorDir . '/psr/log/Psr/Log'),
+    'Atlas\\Table\\' => array($vendorDir . '/atlas/table/src'),
+    'Atlas\\Query\\' => array($vendorDir . '/atlas/query/src'),
+    'Atlas\\Pdo\\' => array($vendorDir . '/atlas/pdo/src'),
     'Atlas\\Orm\\' => array($vendorDir . '/atlas/orm/src'),
+    'Atlas\\Mapper\\' => array($vendorDir . '/atlas/mapper/src'),
+    'Atlas\\Info\\' => array($vendorDir . '/atlas/info/src'),
+    'Atlas\\Cli\\' => array($vendorDir . '/atlas/cli/src'),
 );

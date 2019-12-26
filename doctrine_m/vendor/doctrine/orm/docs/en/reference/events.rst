@@ -179,7 +179,7 @@ the life-time of their registered entities.
    allows providing fallback metadata even when no actual metadata exists
    or could be found. This event is not a lifecycle callback.
 -  preFlush - The preFlush event occurs at the very beginning of a flush
-   operation. This event is not a lifecycle callback.
+   operation.
 -  onFlush - The onFlush event occurs after the change-sets of all
    managed entities are computed. This event is not a lifecycle
    callback.
@@ -323,7 +323,7 @@ XML would look something like this:
     <doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
           xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
           xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
-                              /Users/robo/dev/php/Doctrine/doctrine-mapping.xsd">
+                              https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
 
         <entity name="User">
 
@@ -406,8 +406,8 @@ behaviors across different entity classes.
 
 Note that they require much more detailed knowledge about the inner
 workings of the EntityManager and UnitOfWork. Please read the
-*Implementing Event Listeners* section carefully if you are trying
-to write your own listener.
+:ref:`reference-events-implementing-listeners` section carefully if you
+are trying to write your own listener.
 
 For event subscribers, there are no surprises. They declare the
 lifecycle events in their ``getSubscribedEvents`` method and provide
@@ -434,7 +434,7 @@ A lifecycle event listener looks like the following:
         }
     }
 
-A lifecycle event subscriber may looks like this:
+A lifecycle event subscriber may look like this:
 
 .. code-block:: php
 
@@ -548,8 +548,9 @@ preFlush
 ~~~~~~~~
 
 ``preFlush`` is called at ``EntityManager#flush()`` before
-anything else. ``EntityManager#flush()`` can be called safely
-inside its listeners.
+anything else. ``EntityManager#flush()`` should not be called inside
+its listeners, since `preFlush` event is dispatched in it, which would
+result in infinite loop.
 
 .. code-block:: php
 
@@ -888,6 +889,9 @@ you need to map the listener method using the event type mapping:
               preRemove: [preRemoveHandler]
           # ....
 
+.. note::
+
+    The order of execution of multiple methods for the same event (e.g. multiple @PrePersist) is not guaranteed.
 
 
 Entity listeners resolver

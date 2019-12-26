@@ -6,12 +6,26 @@ class Parser extends \PHPixie\Database\Parser
 {
     protected $conditionsParser;
 
+    /**
+     * Parser constructor.
+     *
+     * @param $database
+     * @param $driver
+     * @param $config
+     * @param $conditionsParser
+     */
     public function __construct($database, $driver, $config, $conditionsParser)
     {
         parent::__construct($database, $driver, $config);
         $this->conditionsParser = $conditionsParser;
     }
 
+    /**
+     * @param \PHPixie\Database\Query $query
+     *
+     * @return mixed
+     * @throws \PHPixie\Database\Exception\Parser
+     */
     public function parse($query)
     {
         $runner = $this->driver->runner();;
@@ -33,64 +47,103 @@ class Parser extends \PHPixie\Database\Parser
         }
     }
 
+    /**
+     * @param $query
+     * @param $runner
+     *
+     * @return mixed
+     * @throws \PHPixie\Database\Exception\Parser
+     */
     protected function selectQuery($query, $runner)
     {
         $this->chainCollection($query, $runner);
-        $fields = $query->getFields();
         $conditions = $this->conditionsParser->parse($query->getWhereConditions());
-        $limit = $query->getLimit();
-        $offset = $query->getOffset();
+        
+        $options = array();
+        
+        if(($limit = $query->getLimit()) !== null) {
+            $options['limit'] = $limit;
+        }
+        
+        if(($offset = $query->getOffset()) !== null) {
+            $options['skip'] = $offset;
+        }
+        
+        if(count($fields = $query->getFields()) !== 0) {
+            $options['projection'] = $this->fieldKeys($fields);
+        }
+        
         $order  = $query->getOrderBy();
-        $fieldKeys = $this->fieldKeys($fields);
-
-        $runner->chainMethod('find', array($conditions, $fieldKeys));
         if (!empty($order)) {
             $ordering =  array();
             foreach ($order as $orderBy) {
                 $ordering[$orderBy->field()] = $orderBy->direction() === 'asc' ? 1 : -1;
             }
-            $runner->chainMethod('sort', array($ordering));
+            $options['sort'] = $ordering;
         }
 
-        if ($limit !== null)
-             $runner->chainMethod('limit', array($limit));
-        if ($offset !== null)
-            $runner->chainMethod('skip', array($offset));
-
+        $runner->chainMethod('find', array($conditions, $options));
         return $runner;
     }
 
+    /**
+     * @param $fields
+     *
+     * @return array
+     */
     protected function fieldKeys($fields)
     {
         return array_fill_keys($fields, 1);
     }
 
+    /**
+     * @param $query
+     * @param $runner
+     *
+     * @return mixed
+     * @throws \PHPixie\Database\Exception\Parser
+     */
     protected function selectSingleQuery($query, $runner)
     {
         $this->chainCollection($query, $runner);
-        $fields = $query->getFields();
         $conditions = $this->conditionsParser->parse($query->getWhereConditions());
-        $fieldKeys = $this->fieldKeys($fields);
-
-        $runner->chainMethod('findOne', array($conditions, $fieldKeys));
+        $options = array();
+        if(count($fields = $query->getFields()) !== 0) {
+            $options['projection'] = $this->fieldKeys($fields);
+        }
+        $runner->chainMethod('findOne', array($conditions, $options));
 
         return $runner;
     }
 
+    /**
+     * @param $query
+     * @param $runner
+     *
+     * @return mixed
+     * @throws \PHPixie\Database\Exception\Parser
+     */
     protected function insertQuery($query, $runner)
     {
         $this->chainCollection($query, $runner);
 
         if (($data = $query->getBatchData()) !== null) {
-            $runner->chainMethod('batchInsert', array($data));
+            $runner->chainMethod('insertMany', array($data));
         } elseif (($data = $query->getData()) !== null) {
-            $runner->chainMethod('insert', array($data));
+            $runner->chainMethod('insertOne', array($data));
         }else
             throw new \PHPixie\Database\Exception\Parser("No data set for insertion");
 
         return $runner;
     }
 
+    /**
+     * @param $query
+     * @param $runner
+     *
+     * @return mixed
+     * @throws \PHPixie\Database\Exception\Parser
+     */
     protected function updateQuery($query, $runner)
     {
         $this->chainCollection($query, $runner);
@@ -111,39 +164,49 @@ class Parser extends \PHPixie\Database\Parser
             throw new \PHPixie\Database\Exception\Parser("No modifiers specified for update");
 
         $conditions = $this->conditionsParser->parse($query->getWhereConditions());
-        $runner->chainMethod('update', array($conditions, $data, array('multiple' => true)));
+        $runner->chainMethod('updateMany', array($conditions, $data));
 
         return $runner;
     }
 
+    /**
+     * @param $query
+     * @param $runner
+     *
+     * @return mixed
+     * @throws \PHPixie\Database\Exception\Parser
+     */
     protected function deleteQuery($query, $runner)
     {
         $this->chainCollection($query, $runner);
         $conditions = $this->conditionsParser->parse($query->getWhereConditions());
-        $runner->chainMethod('remove', array($conditions));
+        $runner->chainMethod('deleteMany', array($conditions));
 
         return $runner;
     }
 
+    /**
+     * @param $query
+     * @param $runner
+     *
+     * @return mixed
+     * @throws \PHPixie\Database\Exception\Parser
+     */
     protected function countQuery($query, $runner)
     {
         $this->chainCollection($query, $runner);
         $conditions = $this->conditionsParser->parse($query->getWhereConditions());
-        
-        $empty = true;
-        foreach($conditions as $key => $value) {
-            $empty = false;
-            break;
-        }
-        
-        if (!$empty) {
-            $runner->chainMethod('find', array($conditions));
-        }
-        $runner->chainMethod('count');
+        $runner->chainMethod('count', array($conditions));
 
         return $runner;
     }
 
+    /**
+     * @param $query
+     * @param $runner
+     *
+     * @throws \PHPixie\Database\Exception\Parser
+     */
     protected function chainCollection($query, $runner)
     {
         if (($collection = $query->getCollection()) !== null) {

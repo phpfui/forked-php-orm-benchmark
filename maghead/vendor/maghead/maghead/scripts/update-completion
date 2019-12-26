@@ -1,2 +1,0 @@
-#!/bin/bash
-php bin/maghead zsh --bind lazy > completion/zsh/_lazy

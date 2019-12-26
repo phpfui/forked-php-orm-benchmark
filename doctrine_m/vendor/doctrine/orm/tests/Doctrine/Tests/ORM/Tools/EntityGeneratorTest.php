@@ -3,6 +3,7 @@
 namespace Doctrine\Tests\ORM\Tools;
 
 use Doctrine\Common\Annotations\AnnotationReader;
+use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Persistence\Mapping\RuntimeReflectionService;
 use Doctrine\ORM\Mapping\ClassMetadataFactory;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
@@ -53,32 +54,36 @@ class EntityGeneratorTest extends OrmTestCase
      *
      * @return ClassMetadataInfo
      */
-    public function generateBookEntityFixture(array $embeddedClasses = array())
+    public function generateBookEntityFixture(array $embeddedClasses = [])
     {
         $metadata = new ClassMetadataInfo($this->_namespace . '\EntityGeneratorBook');
         $metadata->namespace = $this->_namespace;
         $metadata->customRepositoryClassName = $this->_namespace  . '\EntityGeneratorBookRepository';
 
         $metadata->table['name'] = 'book';
-        $metadata->table['uniqueConstraints']['name_uniq'] = array('columns' => array('name'));
-        $metadata->table['indexes']['status_idx'] = array('columns' => array('status'));
-        $metadata->mapField(array('fieldName' => 'name', 'type' => 'string'));
-        $metadata->mapField(array('fieldName' => 'status', 'type' => 'string', 'options' => array('default' => 'published')));
-        $metadata->mapField(array('fieldName' => 'id', 'type' => 'integer', 'id' => true));
-        $metadata->mapOneToOne(array('fieldName' => 'author', 'targetEntity' => 'Doctrine\Tests\ORM\Tools\EntityGeneratorAuthor', 'mappedBy' => 'book'));
-        $joinColumns = array(
-            array('name' => 'author_id', 'referencedColumnName' => 'id')
+        $metadata->table['uniqueConstraints']['name_uniq'] = ['columns' => ['name']];
+        $metadata->table['indexes']['status_idx'] = ['columns' => ['status']];
+        $metadata->mapField(['fieldName' => 'name', 'type' => 'string']);
+        $metadata->mapField(['fieldName' => 'status', 'type' => 'string', 'options' => ['default' => 'published']]);
+        $metadata->mapField(['fieldName' => 'id', 'type' => 'integer', 'id' => true]);
+        $metadata->mapOneToOne(
+            ['fieldName' => 'author', 'targetEntity' => EntityGeneratorAuthor::class, 'mappedBy' => 'book']
         );
-        $metadata->mapManyToMany(array(
+        $joinColumns = [
+            ['name' => 'author_id', 'referencedColumnName' => 'id']
+        ];
+        $metadata->mapManyToMany(
+            [
             'fieldName' => 'comments',
-            'targetEntity' => 'Doctrine\Tests\ORM\Tools\EntityGeneratorComment',
+            'targetEntity' => EntityGeneratorComment::class,
             'fetch' => ClassMetadataInfo::FETCH_EXTRA_LAZY,
-            'joinTable' => array(
+            'joinTable' => [
                 'name' => 'book_comment',
-                'joinColumns' => array(array('name' => 'book_id', 'referencedColumnName' => 'id')),
-                'inverseJoinColumns' => array(array('name' => 'comment_id', 'referencedColumnName' => 'id')),
-            ),
-        ));
+                'joinColumns' => [['name' => 'book_id', 'referencedColumnName' => 'id']],
+                'inverseJoinColumns' => [['name' => 'comment_id', 'referencedColumnName' => 'id']],
+            ],
+            ]
+        );
         $metadata->addLifecycleCallback('loading', 'postLoad');
         $metadata->addLifecycleCallback('willBeRemoved', 'preRemove');
         $metadata->setIdGeneratorType(ClassMetadataInfo::GENERATOR_TYPE_AUTO);
@@ -99,12 +104,12 @@ class EntityGeneratorTest extends OrmTestCase
         $metadata->namespace = $this->_namespace;
 
         $metadata->table['name'] = 'entity_type';
-        $metadata->mapField(array('fieldName' => 'id', 'type' => 'integer', 'id' => true));
+        $metadata->mapField(['fieldName' => 'id', 'type' => 'integer', 'id' => true]);
         $metadata->setIdGeneratorType(ClassMetadataInfo::GENERATOR_TYPE_AUTO);
 
         $name  = $field['fieldName'];
         $type  = $field['dbType'];
-        $metadata->mapField(array('fieldName' => $name, 'type' => $type));
+        $metadata->mapField(['fieldName' => $name, 'type' => $type]);
 
         $this->_generator->writeEntityClass($metadata, $this->_tmpDir);
 
@@ -114,19 +119,19 @@ class EntityGeneratorTest extends OrmTestCase
     /**
      * @return ClassMetadataInfo
      */
-    private function generateIsbnEmbeddableFixture(array $embeddedClasses = array())
+    private function generateIsbnEmbeddableFixture(array $embeddedClasses = [], $columnPrefix = null)
     {
         $metadata = new ClassMetadataInfo($this->_namespace . '\EntityGeneratorIsbn');
         $metadata->namespace = $this->_namespace;
         $metadata->isEmbeddedClass = true;
-        $metadata->mapField(array('fieldName' => 'prefix', 'type' => 'integer'));
-        $metadata->mapField(array('fieldName' => 'groupNumber', 'type' => 'integer'));
-        $metadata->mapField(array('fieldName' => 'publisherNumber', 'type' => 'integer'));
-        $metadata->mapField(array('fieldName' => 'titleNumber', 'type' => 'integer'));
-        $metadata->mapField(array('fieldName' => 'checkDigit', 'type' => 'integer'));
+        $metadata->mapField(['fieldName' => 'prefix', 'type' => 'integer']);
+        $metadata->mapField(['fieldName' => 'groupNumber', 'type' => 'integer']);
+        $metadata->mapField(['fieldName' => 'publisherNumber', 'type' => 'integer']);
+        $metadata->mapField(['fieldName' => 'titleNumber', 'type' => 'integer']);
+        $metadata->mapField(['fieldName' => 'checkDigit', 'type' => 'integer']);
 
         foreach ($embeddedClasses as $fieldName => $embeddedClass) {
-            $this->mapEmbedded($fieldName, $metadata, $embeddedClass);
+            $this->mapEmbedded($fieldName, $metadata, $embeddedClass, $columnPrefix);
         }
 
         $this->_generator->writeEntityClass($metadata, $this->_tmpDir);
@@ -142,10 +147,10 @@ class EntityGeneratorTest extends OrmTestCase
         $metadata = new ClassMetadataInfo($this->_namespace . '\EntityGeneratorTestEmbeddable');
         $metadata->namespace = $this->_namespace;
         $metadata->isEmbeddedClass = true;
-        $metadata->mapField(array('fieldName' => 'field1', 'type' => 'integer'));
-        $metadata->mapField(array('fieldName' => 'field2', 'type' => 'integer', 'nullable' => true));
-        $metadata->mapField(array('fieldName' => 'field3', 'type' => 'datetime'));
-        $metadata->mapField(array('fieldName' => 'field4', 'type' => 'datetime', 'nullable' => true));
+        $metadata->mapField(['fieldName' => 'field1', 'type' => 'integer']);
+        $metadata->mapField(['fieldName' => 'field2', 'type' => 'integer', 'nullable' => true]);
+        $metadata->mapField(['fieldName' => 'field3', 'type' => 'datetime']);
+        $metadata->mapField(['fieldName' => 'field4', 'type' => 'datetime', 'nullable' => true]);
 
         $this->_generator->writeEntityClass($metadata, $this->_tmpDir);
 
@@ -165,7 +170,7 @@ class EntityGeneratorTest extends OrmTestCase
         $columnPrefix = false
     ) {
         $classMetadata->mapEmbedded(
-            array('fieldName' => $fieldName, 'class' => $embeddableMetadata->name, 'columnPrefix' => $columnPrefix)
+            ['fieldName' => $fieldName, 'class' => $embeddableMetadata->name, 'columnPrefix' => $columnPrefix]
         );
     }
 
@@ -180,7 +185,8 @@ class EntityGeneratorTest extends OrmTestCase
         ClassMetadataInfo $embeddableMetadata
     ) {
         foreach ($embeddableMetadata->embeddedClasses as $property => $embeddableClass) {
-            $classMetadata->mapEmbedded(array(
+            $classMetadata->mapEmbedded(
+                [
                 'fieldName' => $fieldName . '.' . $property,
                 'class' => $embeddableClass['class'],
                 'columnPrefix' => $embeddableClass['columnPrefix'],
@@ -188,7 +194,8 @@ class EntityGeneratorTest extends OrmTestCase
                         ? $fieldName . '.' . $embeddableClass['declaredField']
                         : $fieldName,
                 'originalField' => $embeddableClass['originalField'] ?: $property,
-            ));
+                ]
+            );
         }
     }
 
@@ -217,11 +224,44 @@ class EntityGeneratorTest extends OrmTestCase
         return new $metadata->name;
     }
 
+    /**
+     * @group GH-6314
+     */
+    public function testEmbeddedEntityWithNamedColumnPrefix()
+    {
+        $columnPrefix = 'GH6314Prefix_';
+        $testMetadata = $this->generateTestEmbeddableFixture();
+        $isbnMetadata = $this->generateIsbnEmbeddableFixture(['testEmbedded' => $testMetadata], $columnPrefix);
+        $isbnEntity = $this->newInstance($isbnMetadata);
+        $refClass = new \ReflectionClass($isbnEntity);
+        self::assertTrue($refClass->hasProperty('testEmbedded'));
+
+        $docComment = $refClass->getProperty('testEmbedded')->getDocComment();
+        $needle = sprintf('@Embedded(class="%s", columnPrefix="%s")', $testMetadata->name, $columnPrefix);
+        self::assertContains($needle, $docComment);
+    }
+
+    /**
+     * @group GH-6314
+     */
+    public function testEmbeddedEntityWithoutColumnPrefix()
+    {
+        $testMetadata = $this->generateTestEmbeddableFixture();
+        $isbnMetadata = $this->generateIsbnEmbeddableFixture(['testEmbedded' => $testMetadata], false);
+        $isbnEntity = $this->newInstance($isbnMetadata);
+        $refClass = new \ReflectionClass($isbnEntity);
+        self::assertTrue($refClass->hasProperty('testEmbedded'));
+
+        $docComment = $refClass->getProperty('testEmbedded')->getDocComment();
+        $needle = sprintf('@Embedded(class="%s", columnPrefix=false)', $testMetadata->name);
+        self::assertContains($needle, $docComment);
+    }
+
     public function testGeneratedEntityClass()
     {
         $testMetadata = $this->generateTestEmbeddableFixture();
-        $isbnMetadata = $this->generateIsbnEmbeddableFixture(array('test' => $testMetadata));
-        $metadata = $this->generateBookEntityFixture(array('isbn' => $isbnMetadata));
+        $isbnMetadata = $this->generateIsbnEmbeddableFixture(['test' => $testMetadata]);
+        $metadata = $this->generateBookEntityFixture(['isbn' => $isbnMetadata]);
 
         $book = $this->newInstance($metadata);
         $this->assertTrue(class_exists($metadata->name), "Class does not exist.");
@@ -263,10 +303,10 @@ class EntityGeneratorTest extends OrmTestCase
 
         $comment = new EntityGeneratorComment();
         $this->assertInstanceOf($metadata->name, $book->addComment($comment));
-        $this->assertInstanceOf('Doctrine\Common\Collections\ArrayCollection', $book->getComments());
-        $this->assertEquals(new \Doctrine\Common\Collections\ArrayCollection(array($comment)), $book->getComments());
+        $this->assertInstanceOf(ArrayCollection::class, $book->getComments());
+        $this->assertEquals(new ArrayCollection([$comment]), $book->getComments());
         $this->assertInternalType('boolean', $book->removeComment($comment));
-        $this->assertEquals(new \Doctrine\Common\Collections\ArrayCollection(array()), $book->getComments());
+        $this->assertEquals(new ArrayCollection([]), $book->getComments());
 
         $this->newInstance($isbnMetadata);
         $isbn = new $isbnMetadata->name();
@@ -281,9 +321,9 @@ class EntityGeneratorTest extends OrmTestCase
 
     public function testEntityUpdatingWorks()
     {
-        $metadata = $this->generateBookEntityFixture(array('isbn' => $this->generateIsbnEmbeddableFixture()));
+        $metadata = $this->generateBookEntityFixture(['isbn' => $this->generateIsbnEmbeddableFixture()]);
 
-        $metadata->mapField(array('fieldName' => 'test', 'type' => 'string'));
+        $metadata->mapField(['fieldName' => 'test', 'type' => 'string']);
 
         $testEmbeddableMetadata = $this->generateTestEmbeddableFixture();
         $this->mapEmbedded('testEmbedded', $metadata, $testEmbeddableMetadata);
@@ -325,7 +365,7 @@ class EntityGeneratorTest extends OrmTestCase
      */
     public function testDoesNotRegenerateExistingMethodsWithDifferentCase()
     {
-        $metadata = $this->generateBookEntityFixture(array('isbn' => $this->generateIsbnEmbeddableFixture()));
+        $metadata = $this->generateBookEntityFixture(['isbn' => $this->generateIsbnEmbeddableFixture()]);
 
         // Workaround to change existing fields case (just to simulate the use case)
         $metadata->fieldMappings['status']['fieldName'] = 'STATUS';
@@ -356,7 +396,7 @@ class EntityGeneratorTest extends OrmTestCase
     public function testMethodDocBlockShouldStartWithBackSlash()
     {
         $embeddedMetadata = $this->generateIsbnEmbeddableFixture();
-        $metadata = $this->generateBookEntityFixture(array('isbn' => $embeddedMetadata));
+        $metadata = $this->generateBookEntityFixture(['isbn' => $embeddedMetadata]);
         $book     = $this->newInstance($metadata);
 
         $this->assertPhpDocVarType('\Doctrine\Common\Collections\Collection', new \ReflectionProperty($book, 'comments'));
@@ -367,8 +407,8 @@ class EntityGeneratorTest extends OrmTestCase
         $this->assertPhpDocReturnType('boolean', new \ReflectionMethod($book, 'removeComment'));
 
         $this->assertPhpDocVarType('\Doctrine\Tests\ORM\Tools\EntityGeneratorAuthor', new \ReflectionProperty($book, 'author'));
-        $this->assertPhpDocReturnType('\Doctrine\Tests\ORM\Tools\EntityGeneratorAuthor', new \ReflectionMethod($book, 'getAuthor'));
-        $this->assertPhpDocParamType('\Doctrine\Tests\ORM\Tools\EntityGeneratorAuthor', new \ReflectionMethod($book, 'setAuthor'));
+        $this->assertPhpDocReturnType('\Doctrine\Tests\ORM\Tools\EntityGeneratorAuthor|null', new \ReflectionMethod($book, 'getAuthor'));
+        $this->assertPhpDocParamType('\Doctrine\Tests\ORM\Tools\EntityGeneratorAuthor|null', new \ReflectionMethod($book, 'setAuthor'));
 
         $expectedClassName = '\\' . $embeddedMetadata->name;
         $this->assertPhpDocVarType($expectedClassName, new \ReflectionProperty($book, 'isbn'));
@@ -403,7 +443,7 @@ class EntityGeneratorTest extends OrmTestCase
     public function testLoadMetadata()
     {
         $embeddedMetadata = $this->generateIsbnEmbeddableFixture();
-        $metadata = $this->generateBookEntityFixture(array('isbn' => $embeddedMetadata));
+        $metadata = $this->generateBookEntityFixture(['isbn' => $embeddedMetadata]);
 
         $book = $this->newInstance($metadata);
 
@@ -442,10 +482,10 @@ class EntityGeneratorTest extends OrmTestCase
     {
         $this->_generator->setAnnotationPrefix('ORM\\');
         $embeddedMetadata = $this->generateIsbnEmbeddableFixture();
-        $metadata = $this->generateBookEntityFixture(array('isbn' => $embeddedMetadata));
+        $metadata = $this->generateBookEntityFixture(['isbn' => $embeddedMetadata]);
 
         $reader = new AnnotationReader();
-        $driver = new AnnotationDriver($reader, array());
+        $driver = new AnnotationDriver($reader, []);
 
         $book = $this->newInstance($metadata);
 
@@ -488,7 +528,7 @@ class EntityGeneratorTest extends OrmTestCase
         $this->_generator->writeEntityClass($metadata, $this->_tmpDir);
         $this->newInstance($metadata); // force instantiation (causes autoloading to kick in)
 
-        $driver = new AnnotationDriver(new AnnotationReader(), array());
+        $driver = new AnnotationDriver(new AnnotationReader(), []);
         $cm     = new ClassMetadataInfo($metadata->name);
 
         $cm->initializeReflection(new RuntimeReflectionService);
@@ -520,13 +560,15 @@ class EntityGeneratorTest extends OrmTestCase
     {
         $metadata               = new ClassMetadataInfo($this->_namespace . '\DDC1784Entity');
         $metadata->namespace    = $this->_namespace;
-        $metadata->mapField(array('fieldName' => 'id', 'type' => 'integer', 'id' => true));
+        $metadata->mapField(['fieldName' => 'id', 'type' => 'integer', 'id' => true]);
         $metadata->setIdGeneratorType(ClassMetadataInfo::GENERATOR_TYPE_SEQUENCE);
-        $metadata->setSequenceGeneratorDefinition(array(
+        $metadata->setSequenceGeneratorDefinition(
+            [
             'sequenceName'      => 'DDC1784_ID_SEQ',
             'allocationSize'    => 1,
             'initialValue'      => 2
-        ));
+            ]
+        );
         $this->_generator->writeEntityClass($metadata, $this->_tmpDir);
 
         $filename = $this->_tmpDir . DIRECTORY_SEPARATOR
@@ -552,23 +594,25 @@ class EntityGeneratorTest extends OrmTestCase
     {
         $metadata               = new ClassMetadataInfo($this->_namespace . '\DDC2079Entity');
         $metadata->namespace    = $this->_namespace;
-        $metadata->mapField(array('fieldName' => 'id', 'type' => 'integer', 'id' => true));
+        $metadata->mapField(['fieldName' => 'id', 'type' => 'integer', 'id' => true]);
         $metadata->setIdGeneratorType(ClassMetadataInfo::GENERATOR_TYPE_SEQUENCE);
-        $metadata->mapManyToMany(array(
+        $metadata->mapManyToMany(
+            [
             'fieldName'     => 'centroCustos',
             'targetEntity'  => 'DDC2079CentroCusto',
-            'joinTable'     => array(
+            'joinTable'     => [
                 'name'                  => 'unidade_centro_custo',
-                'joinColumns'           => array(
-                    array('name' => 'idorcamento',      'referencedColumnName' => 'idorcamento'),
-                    array('name' => 'idunidade',        'referencedColumnName' => 'idunidade')
-                ),
-                'inverseJoinColumns'    => array(
-                    array('name' => 'idcentrocusto',    'referencedColumnName' => 'idcentrocusto'),
-                    array('name' => 'idpais',           'referencedColumnName' => 'idpais'),
-                ),
-            ),
-        ));
+                'joinColumns'           => [
+                    ['name' => 'idorcamento',      'referencedColumnName' => 'idorcamento'],
+                    ['name' => 'idunidade',        'referencedColumnName' => 'idunidade']
+                ],
+                'inverseJoinColumns'    => [
+                    ['name' => 'idcentrocusto',    'referencedColumnName' => 'idcentrocusto'],
+                    ['name' => 'idpais',           'referencedColumnName' => 'idpais'],
+                ],
+            ],
+            ]
+        );
         $this->_generator->writeEntityClass($metadata, $this->_tmpDir);
 
         $filename = $this->_tmpDir . DIRECTORY_SEPARATOR
@@ -612,7 +656,9 @@ class EntityGeneratorTest extends OrmTestCase
             $this->assertEquals($expected, $actual);
         }
 
-        $this->setExpectedException('\InvalidArgumentException', 'Invalid provided InheritanceType: INVALID');
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid provided InheritanceType: INVALID');
+
         $method->invoke($this->_generator, 'INVALID');
     }
 
@@ -639,7 +685,9 @@ class EntityGeneratorTest extends OrmTestCase
             $this->assertEquals($expected, $actual);
         }
 
-        $this->setExpectedException('\InvalidArgumentException', 'Invalid provided ChangeTrackingPolicy: INVALID');
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid provided ChangeTrackingPolicy: INVALID');
+
         $method->invoke($this->_generator, 'INVALID');
     }
 
@@ -666,7 +714,9 @@ class EntityGeneratorTest extends OrmTestCase
             $this->assertEquals($expected, $actual);
         }
 
-        $this->setExpectedException('\InvalidArgumentException', 'Invalid provided IdGeneratorType: INVALID');
+        $this->expectException(\InvalidArgumentException::class);
+        $this->expectExceptionMessage('Invalid provided IdGeneratorType: INVALID');
+
         $method->invoke($this->_generator, 'INVALID');
     }
 
@@ -831,7 +881,7 @@ class EntityGeneratorTest extends OrmTestCase
     public function testGeneratedMutableEmbeddablesClass()
     {
         $embeddedMetadata = $this->generateTestEmbeddableFixture();
-        $metadata = $this->generateIsbnEmbeddableFixture(array('test' => $embeddedMetadata));
+        $metadata = $this->generateIsbnEmbeddableFixture(['test' => $embeddedMetadata]);
 
         $isbn = $this->newInstance($metadata);
 
@@ -871,7 +921,7 @@ class EntityGeneratorTest extends OrmTestCase
     {
         $this->_generator->setEmbeddablesImmutable(true);
         $embeddedMetadata = $this->generateTestEmbeddableFixture();
-        $metadata = $this->generateIsbnEmbeddableFixture(array('test' => $embeddedMetadata));
+        $metadata = $this->generateIsbnEmbeddableFixture(['test' => $embeddedMetadata]);
 
         $this->loadEntityClass($embeddedMetadata);
         $this->loadEntityClass($metadata);
@@ -961,86 +1011,114 @@ class EntityGeneratorTest extends OrmTestCase
      */
     public function getEntityTypeAliasDataProvider()
     {
-        return array(
-            array(array(
+        return [
+            [
+                [
                 'fieldName' => 'datetimetz',
                 'phpType' => '\\DateTime',
                 'dbType' => 'datetimetz',
                 'value' => new \DateTime
-            )),
-            array(array(
+                ]
+            ],
+            [
+                [
                 'fieldName' => 'datetime',
                 'phpType' => '\\DateTime',
                 'dbType' => 'datetime',
                 'value' => new \DateTime
-            )),
-            array(array(
+                ]
+            ],
+            [
+                [
                 'fieldName' => 'date',
                 'phpType' => '\\DateTime',
                 'dbType' => 'date',
                 'value' => new \DateTime
-            )),
-            array(array(
+                ]
+            ],
+            [
+                [
                 'fieldName' => 'time',
                 'phpType' => '\DateTime',
                 'dbType' => 'time',
                 'value' => new \DateTime
-            )),
-            array(array(
+                ]
+            ],
+            [
+                [
                 'fieldName' => 'object',
                 'phpType' => '\stdClass',
                 'dbType' => 'object',
                 'value' => new \stdClass()
-            )),
-            array(array(
+                ]
+            ],
+            [
+                [
                 'fieldName' => 'bigint',
                 'phpType' => 'int',
                 'dbType' => 'bigint',
                 'value' => 11
-            )),
-            array(array(
+                ]
+            ],
+            [
+                [
                 'fieldName' => 'smallint',
                 'phpType' => 'int',
                 'dbType' => 'smallint',
                 'value' => 22
-            )),
-            array(array(
+                ]
+            ],
+            [
+                [
                 'fieldName' => 'text',
                 'phpType' => 'string',
                 'dbType' => 'text',
                 'value' => 'text'
-            )),
-            array(array(
+                ]
+            ],
+            [
+                [
                 'fieldName' => 'blob',
                 'phpType' => 'string',
                 'dbType' => 'blob',
                 'value' => 'blob'
-            )),
-            array(array(
+                ]
+            ],
+            [
+                [
+                    'fieldName' => 'guid',
+                    'phpType' => 'string',
+                    'dbType' => 'guid',
+                    'value' => '00000000-0000-0000-0000-000000000001'
+                ]
+            ],
+            [
+                [
                 'fieldName' => 'decimal',
                 'phpType' => 'string',
                 'dbType' => 'decimal',
                 'value' => '12.34'
-            ),
-        ));
+                ],
+            ]
+        ];
     }
 
     public function getParseTokensInEntityFileData()
     {
-        return array(
-            array(
+        return [
+            [
                 '<?php namespace Foo\Bar; class Baz {}',
-                array('Foo\Bar\Baz'),
-            ),
-            array(
+                ['Foo\Bar\Baz'],
+            ],
+            [
                 '<?php namespace Foo\Bar; use Foo; class Baz {}',
-                array('Foo\Bar\Baz'),
-            ),
-            array(
+                ['Foo\Bar\Baz'],
+            ],
+            [
                 '<?php namespace /*Comment*/ Foo\Bar; /** Foo */class /* Comment */ Baz {}',
-                array('Foo\Bar\Baz'),
-            ),
-            array(
+                ['Foo\Bar\Baz'],
+            ],
+            [
                 '
 <?php namespace
 /*Comment*/
@@ -1052,9 +1130,9 @@ class
 /* Comment */
  Baz {}
      ',
-                array('Foo\Bar\Baz'),
-            ),
-            array(
+                ['Foo\Bar\Baz'],
+            ],
+            [
                 '
 <?php namespace Foo\Bar; class Baz {
     public static function someMethod(){
@@ -1062,9 +1140,9 @@ class
     }
 }
 ',
-                array('Foo\Bar\Baz'),
-            ),
-        );
+                ['Foo\Bar\Baz'],
+            ],
+        ];
     }
 
     /**
@@ -1073,17 +1151,25 @@ class
      */
     private function assertPhpDocVarType($type, \ReflectionProperty $property)
     {
-        $this->assertEquals(1, preg_match('/@var\s+([^\s]+)/',$property->getDocComment(), $matches));
+        $docComment = $property->getDocComment();
+        $regex      = '/@var\s+([\S]+)$/m';
+
+        $this->assertRegExp($regex, $docComment);
+        $this->assertEquals(1, preg_match($regex, $docComment, $matches));
         $this->assertEquals($type, $matches[1]);
     }
 
     /**
      * @param string $type
-     * @param \ReflectionProperty $method
+     * @param \ReflectionMethod $method
      */
     private function assertPhpDocReturnType($type, \ReflectionMethod $method)
     {
-        $this->assertEquals(1, preg_match('/@return\s+([^\s]+)/', $method->getDocComment(), $matches));
+        $docComment = $method->getDocComment();
+        $regex      = '/@return\s+([\S]+)(\s+.*)$/m';
+
+        $this->assertRegExp($regex, $docComment);
+        $this->assertEquals(1, preg_match($regex, $docComment, $matches));
         $this->assertEquals($type, $matches[1]);
     }
 
@@ -1095,6 +1181,99 @@ class
     {
         $this->assertEquals(1, preg_match('/@param\s+([^\s]+)/', $method->getDocComment(), $matches));
         $this->assertEquals($type, $matches[1]);
+    }
+
+    /**
+     * @group 6703
+     *
+     * @dataProvider columnOptionsProvider
+     */
+    public function testOptionsAreGeneratedProperly(string $expectedAnnotation, array $fieldConfiguration) : void
+    {
+        $metadata               = new ClassMetadataInfo($this->_namespace . '\GH6703Options');
+        $metadata->namespace    = $this->_namespace;
+        $metadata->mapField(['fieldName' => 'id', 'type' => 'integer', 'id' => true]);
+        $metadata->mapField(['fieldName' => 'test'] + $fieldConfiguration);
+        $metadata->setIdGeneratorType(ClassMetadataInfo::GENERATOR_TYPE_SEQUENCE);
+        $this->_generator->writeEntityClass($metadata, $this->_tmpDir);
+
+        $filename = $this->_tmpDir . DIRECTORY_SEPARATOR . $this->_namespace . DIRECTORY_SEPARATOR . 'GH6703Options.php';
+
+        self::assertFileExists($filename);
+        require_once $filename;
+
+        $property   = new \ReflectionProperty($metadata->name, 'test');
+        $docComment = $property->getDocComment();
+
+        self::assertContains($expectedAnnotation, $docComment);
+    }
+
+    public function columnOptionsProvider() : array
+    {
+        return [
+            'string-default'   => [
+                '@Column(name="test", type="string", length=10, options={"default"="testing"})',
+                ['type' => 'string', 'length' => 10, 'options' => ['default' => 'testing']],
+            ],
+            'string-fixed'     => [
+                '@Column(name="test", type="string", length=10, options={"fixed"=true})',
+                ['type' => 'string', 'length' => 10, 'options' => ['fixed' => true]],
+            ],
+            'string-comment'   => [
+                '@Column(name="test", type="string", length=10, options={"comment"="testing"})',
+                ['type' => 'string', 'length' => 10, 'options' => ['comment' => 'testing']],
+            ],
+            'string-collation' => [
+                '@Column(name="test", type="string", length=10, options={"collation"="utf8mb4_general_ci"})',
+                ['type' => 'string', 'length' => 10, 'options' => ['collation' => 'utf8mb4_general_ci']],
+            ],
+            'string-check'     => [
+                '@Column(name="test", type="string", length=10, options={"check"="CHECK (test IN (""test""))"})',
+                ['type' => 'string', 'length' => 10, 'options' => ['check' => 'CHECK (test IN (""test""))']],
+            ],
+            'string-all'       => [
+                '@Column(name="test", type="string", length=10, options={"default"="testing","fixed"=true,"comment"="testing","collation"="utf8mb4_general_ci","check"="CHECK (test IN (""test""))"})',
+                [
+                    'type' => 'string',
+                    'length' => 10,
+                    'options' => [
+                        'default' => 'testing',
+                        'fixed' => true,
+                        'comment' => 'testing',
+                        'collation' => 'utf8mb4_general_ci',
+                        'check' => 'CHECK (test IN (""test""))'
+                    ]
+                ],
+            ],
+            'int-default'      => [
+                '@Column(name="test", type="integer", options={"default"="10"})',
+                ['type' => 'integer', 'options' => ['default' => 10]],
+            ],
+            'int-unsigned'     => [
+                '@Column(name="test", type="integer", options={"unsigned"=true})',
+                ['type' => 'integer', 'options' => ['unsigned' => true]],
+            ],
+            'int-comment'      => [
+                '@Column(name="test", type="integer", options={"comment"="testing"})',
+                ['type' => 'integer', 'options' => ['comment' => 'testing']],
+            ],
+            'int-check'        => [
+                '@Column(name="test", type="integer", options={"check"="CHECK (test > 5)"})',
+                ['type' => 'integer', 'options' => ['check' => 'CHECK (test > 5)']],
+            ],
+            'int-all'        => [
+                '@Column(name="test", type="integer", options={"default"="10","unsigned"=true,"comment"="testing","check"="CHECK (test > 5)"})',
+                [
+                    'type' => 'integer',
+                    'options' => [
+                        'default' => 10,
+                        'unsigned' => true,
+                        'comment' => 'testing',
+                        'check' => 'CHECK (test > 5)',
+                    ]
+                ],
+            ],
+        ];
     }
 }
 

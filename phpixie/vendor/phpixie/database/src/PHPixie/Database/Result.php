@@ -4,16 +4,28 @@ namespace PHPixie\Database;
 
 abstract class Result implements \Iterator
 {
-    public function asArray()
+    /**
+     * @param string $key
+     * @return array
+     */
+    public function asArray($key = null)
     {
         $this->rewind();
         $array = array();
         foreach ($this as $item)
-            $array[] = $item;
+            if($key !== null && isset($item->$key)){
+                $array[$item->$key] = $item;
+            } else {
+                $array[] = $item;
+            }
 
         return $array;
     }
 
+    /**
+     * @param $field
+     * @return null
+     */
     public function get($field)
     {
         if (!$this->valid())
@@ -35,6 +47,10 @@ abstract class Result implements \Iterator
         return $values;
     }
 
+    /**
+     * @param array $fields
+     * @return array
+     */
     public function getFields($fields)
     {
         $data = array();
@@ -47,7 +63,7 @@ abstract class Result implements \Iterator
         
         return $data;
     }
-    
+
     public function getItemField($item, $field)
     {
         $current = $item;

@@ -3,7 +3,7 @@
 <doctrine-mapping xmlns="http://doctrine-project.org/schemas/orm/doctrine-mapping"
       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
       xsi:schemaLocation="http://doctrine-project.org/schemas/orm/doctrine-mapping
-                          http://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
+                          https://www.doctrine-project.org/schemas/orm/doctrine-mapping.xsd">
 
     <entity name="Doctrine\Tests\ORM\Tools\Export\User" table="cms_users">
         <options>
@@ -33,6 +33,12 @@
         <one-to-one field="address" target-entity="Doctrine\Tests\ORM\Tools\Export\Address" inversed-by="user" orphan-removal="true" fetch="EAGER">
             <cascade><cascade-persist /></cascade>
             <join-column name="address_id" referenced-column-name="id" on-delete="CASCADE" on-update="CASCADE"/>
+        </one-to-one>
+
+        <one-to-one field="cart" target-entity="Doctrine\Tests\ORM\Tools\Export\Cart" mapped-by="user">
+            <cascade>
+                <cascade-remove/>
+            </cascade>
         </one-to-one>
 
         <many-to-one field="mainGroup" target-entity="Doctrine\Tests\ORM\Tools\Export\Group" />
@@ -71,6 +77,18 @@
             </join-table>
         </many-to-many>
 
+        <entity-listeners>
+            <entity-listener class="Doctrine\Tests\ORM\Tools\Export\UserListener">
+                <lifecycle-callback type="prePersist" method="customPrePersist" />
+                <lifecycle-callback type="postPersist" method="customPostPersist" />
+            </entity-listener>
+            <entity-listener class="Doctrine\Tests\ORM\Tools\Export\GroupListener">
+                <lifecycle-callback type="prePersist" method="prePersist" />
+            </entity-listener>
+            <entity-listener class="Doctrine\Tests\ORM\Tools\Export\AddressListener">
+                <lifecycle-callback type="postPersist" method="customPostPersist" />
+            </entity-listener>
+        </entity-listeners>
     </entity>
 
 </doctrine-mapping>

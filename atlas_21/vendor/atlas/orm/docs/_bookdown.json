@@ -1,5 +1,5 @@
 {
-    "title": "Atlas.Orm 2.x",
+    "title": "ORM",
     "content": [
         "getting-started.md",
         "relationships.md",
@@ -10,6 +10,7 @@
         "behavior.md",
         "events.md",
         "direct.md",
+        "other.md",
         "domain.md"
     ]
 }

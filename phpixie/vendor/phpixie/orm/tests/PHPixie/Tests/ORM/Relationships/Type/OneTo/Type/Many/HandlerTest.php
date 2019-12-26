@@ -170,7 +170,8 @@ class HandlerTest extends \PHPixie\Tests\ORM\Relationships\Type\OneTo\HandlerTes
         $result = $this->getReusableResult();
         $plan = $this->getPlan();
         $preloadProperty = $this->getOwnerPreloadValue();
-        
+        $relatedLoader = $this->getLoader();
+
         $owner = $this->getDatabaseEntity();
         $this->method($preloadProperty, 'owner', $owner, array(), 0);
         
@@ -181,7 +182,8 @@ class HandlerTest extends \PHPixie\Tests\ORM\Relationships\Type\OneTo\HandlerTes
             $side,
             $preloadProperty,
             $result,
-            $plan
+            $plan,
+            $relatedLoader
         ));
     }
     
@@ -387,8 +389,9 @@ class HandlerTest extends \PHPixie\Tests\ORM\Relationships\Type\OneTo\HandlerTes
     }
 
     protected function getItem($expectCreateMissing = true, $hasProperty = true, $ownerLoaded = false, $owner = null) {
+        $ownerEntity = $owner !== null ? $owner['entity'] : null;
         $entity = $this->getDatabaseEntity();
-        return $this->addSingleProperty($entity, 'owner', $hasProperty, $ownerLoaded, $owner['entity'], $expectCreateMissing);
+        return $this->addSingleProperty($entity, 'owner', $hasProperty, $ownerLoaded, $ownerEntity, $expectCreateMissing);
     }
 
     protected function getOwner($hasProperty = true, $loaded = true, $expectCreateMissing = false, $id = 1)

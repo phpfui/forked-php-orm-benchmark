@@ -1,7 +1,0 @@
-{
-    "require": {
-        "doctrine/common": "2.2.*",
-        "doctrine/dbal": "2.2.*",
-        "doctrine/orm": "2.2.*"
-    }
-}

@@ -9,21 +9,34 @@ class Connection extends \PHPixie\Database\Connection
     protected $database;
     protected $lastInsertId;
 
-    public function __construct($driver, $name, $config)
+    protected function buildClient()
     {
-        parent::__construct($driver, $name, $config);
+        $config = $this->config;
+        
+        $uriOptions = $config->get('uriOptions', array());
+        $driverOptions = $config->get('driverOptions', array());
+        
+        if (!is_array($uriOptions)) {
+            throw new \PHPixie\Database\Exception("Mongo 'uriOptions' configuration parameter must be an array");
+        }
+        
+        if (!is_array($driverOptions)) {
+            throw new \PHPixie\Database\Exception("Mongo 'driverOptions' configuration parameter must be an array");
+        }
 
-        $options = $config->get('connectionOptions', array());
-        if (!is_array($options))
-            throw new \PHPixie\Database\Exception("Mongo 'connectionOptions' configuration parameter must be an array");
+        $uriOptions['username'] = $config->get('user', '');
+        $uriOptions['password'] = $config->get('password', '');
 
-        $options['username'] = $config->get('user', '');
-        $options['password'] = $config->get('password', '');
-
-        $this->databaseName = $config->get('database');
-        $options['db'] = $this->databaseName;
-
-        $this->client = $this->connect($config->get('connection'), $options);
+        $this->databaseName = $config->get('database', null);
+        $uriOptions['database'] = $this->databaseName;
+        
+        return $this->buildMongoClient($config->get('connection'), $uriOptions, $driverOptions);
+    }
+    
+    public function disconnect()
+    {
+        $this->client->close();
+        $this->client = null;
     }
 
     public function selectSingleQuery()
@@ -39,7 +52,7 @@ class Connection extends \PHPixie\Database\Connection
     public function run($runner)
     {
         $result = $runner->run($this);
-        if ($result instanceof \MongoCursor) {
+        if ($result instanceof \MongoDB\Driver\Cursor) {
             return $this->driver->result($result);
         }
         return $result;
@@ -50,20 +63,25 @@ class Connection extends \PHPixie\Database\Connection
         $this->lastInsertId = $id;
     }
 
-    protected function connect($connection, $options)
+    protected function buildMongoClient($connection, $uriOptions, $driverOptions)
     {
-        return new \MongoClient($connection, $options);
+        return new \MongoDB\Client($connection, $uriOptions, $driverOptions);
     }
 
     public function client()
     {
+        if($this->client === null) {
+            $this->client = $this->buildClient();
+        }
+        
         return $this->client;
     }
 
     public function database()
     {
-        if ($this->database === null)
+        if ($this->database === null) {
             $this->database = $this->client()->{$this->databaseName};
+        }
 
         return $this->database;
     }

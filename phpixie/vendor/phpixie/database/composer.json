@@ -4,7 +4,7 @@
     "keywords": ["database", "mysql", "postgresql", "sqlite"],
     "homepage": "http://phpixie.com",
     "type": "library",
-    "license": "BSD",
+    "license": "BSD-3-Clause",
     "authors": [
         {
             "name": "Roman Tsiupa",
@@ -13,10 +13,14 @@
         }
     ],
     "require": {
-        "phpixie/slice": "~3.0"
+        "phpixie/slice": "~3.0",
+        "psr/log": "~1.0.2"
     },
     "require-dev": {
-        "phpixie/test": "~3.0"
+        "phpixie/test": "~3.2"
+    },
+    "suggest": {
+        "mongodb/mongodb": "Required for MongoDB support"
     },
     "autoload": {
         "psr-4": {

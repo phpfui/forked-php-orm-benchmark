@@ -1,31 +1,34 @@
 {
     "_readme": [
         "This file locks the dependencies of your project to a known state",
-        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#composer-lock-the-lock-file",
+        "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "hash": "1f3c992b224806ed12433b875bf8b7d1",
     "content-hash": "644fa48ea382f0891e3d6d28ff85da10",
     "packages": [
         {
             "name": "phpixie/database",
-            "version": "3.1.1",
+            "version": "3.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPixie/Database.git",
-                "reference": "03a9a370b598be92e1ee6157de2e9e9f38722b07"
+                "reference": "212118ae039add6fca1b61aa52e9c50dd395d5ca"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPixie/Database/zipball/03a9a370b598be92e1ee6157de2e9e9f38722b07",
-                "reference": "03a9a370b598be92e1ee6157de2e9e9f38722b07",
+                "url": "https://api.github.com/repos/PHPixie/Database/zipball/212118ae039add6fca1b61aa52e9c50dd395d5ca",
+                "reference": "212118ae039add6fca1b61aa52e9c50dd395d5ca",
                 "shasum": ""
             },
             "require": {
-                "phpixie/slice": "~3.0"
+                "phpixie/slice": "~3.0",
+                "psr/log": "~1.0.2"
             },
             "require-dev": {
-                "phpixie/test": "~3.0"
+                "phpixie/test": "~3.2"
+            },
+            "suggest": {
+                "mongodb/mongodb": "Required for MongoDB support"
             },
             "type": "library",
             "extra": {
@@ -41,7 +44,7 @@
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "BSD"
+                "BSD-3-Clause"
             ],
             "authors": [
                 {
@@ -58,28 +61,28 @@
                 "postgresql",
                 "sqlite"
             ],
-            "time": "2015-10-27 20:09:38"
+            "time": "2019-12-25T22:34:42+00:00"
         },
         {
             "name": "phpixie/orm",
-            "version": "3.1.1",
+            "version": "3.19",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPixie/ORM.git",
-                "reference": "427a6fe3f89689855fd74f72d50d6d664ea0c2a2"
+                "reference": "95d6fb0060bb4d724f630ef20e4271b824ba66ab"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPixie/ORM/zipball/427a6fe3f89689855fd74f72d50d6d664ea0c2a2",
-                "reference": "427a6fe3f89689855fd74f72d50d6d664ea0c2a2",
+                "url": "https://api.github.com/repos/PHPixie/ORM/zipball/95d6fb0060bb4d724f630ef20e4271b824ba66ab",
+                "reference": "95d6fb0060bb4d724f630ef20e4271b824ba66ab",
                 "shasum": ""
             },
             "require": {
-                "phpixie/database": "~3.0",
+                "phpixie/database": "~3.11",
                 "phpixie/slice": "~3.0"
             },
             "require-dev": {
-                "phpixie/test": "~3.0"
+                "phpixie/test": "~3.2"
             },
             "type": "library",
             "extra": {
@@ -95,7 +98,7 @@
             },
             "notification-url": "https://packagist.org/downloads/",
             "license": [
-                "BSD"
+                "BSD-3-Clause"
             ],
             "authors": [
                 {
@@ -110,20 +113,20 @@
                 "database",
                 "orm"
             ],
-            "time": "2015-10-27 21:35:09"
+            "time": "2019-12-25T23:21:19+00:00"
         },
         {
             "name": "phpixie/slice",
-            "version": "3.1.1",
+            "version": "3.2.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/PHPixie/Slice.git",
-                "reference": "415d2c2ae576a27c12f8b54952dfc1193a7c9588"
+                "reference": "4435da2e2f877b899380c64c86e1bd55795c615c"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/PHPixie/Slice/zipball/415d2c2ae576a27c12f8b54952dfc1193a7c9588",
-                "reference": "415d2c2ae576a27c12f8b54952dfc1193a7c9588",
+                "url": "https://api.github.com/repos/PHPixie/Slice/zipball/4435da2e2f877b899380c64c86e1bd55795c615c",
+                "reference": "4435da2e2f877b899380c64c86e1bd55795c615c",
                 "shasum": ""
             },
             "require-dev": {
@@ -159,7 +162,54 @@
                 "data",
                 "parameters"
             ],
-            "time": "2015-11-10 13:29:07"
+            "time": "2016-06-12T08:07:30+00:00"
+        },
+        {
+            "name": "psr/log",
+            "version": "1.0.2",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/php-fig/log.git",
+                "reference": "4ebe3a8bf773a19edfe0a84b6585ba3d401b724d"
+            },
+            "dist": {
+                "type": "zip",
+                "url": "https://api.github.com/repos/php-fig/log/zipball/4ebe3a8bf773a19edfe0a84b6585ba3d401b724d",
+                "reference": "4ebe3a8bf773a19edfe0a84b6585ba3d401b724d",
+                "shasum": ""
+            },
+            "require": {
+                "php": ">=5.3.0"
+            },
+            "type": "library",
+            "extra": {
+                "branch-alias": {
+                    "dev-master": "1.0.x-dev"
+                }
+            },
+            "autoload": {
+                "psr-4": {
+                    "Psr\\Log\\": "Psr/Log/"
+                }
+            },
+            "notification-url": "https://packagist.org/downloads/",
+            "license": [
+                "MIT"
+            ],
+            "authors": [
+                {
+                    "name": "PHP-FIG",
+                    "homepage": "http://www.php-fig.org/"
+                }
+            ],
+            "description": "Common interface for logging libraries",
+            "homepage": "https://github.com/php-fig/log",
+            "keywords": [
+                "log",
+                "psr",
+                "psr-3"
+            ],
+            "time": "2016-10-10T12:19:37+00:00"
         }
     ],
     "packages-dev": [],

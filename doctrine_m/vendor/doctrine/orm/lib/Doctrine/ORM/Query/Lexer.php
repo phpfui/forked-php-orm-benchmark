@@ -19,6 +19,8 @@
 
 namespace Doctrine\ORM\Query;
 
+use Doctrine\Common\Lexer\AbstractLexer;
+
 /**
  * Scans a DQL query for tokens.
  *
@@ -27,7 +29,7 @@ namespace Doctrine\ORM\Query;
  * @author Roman Borschel <roman@code-factory.org>
  * @since 2.0
  */
-class Lexer extends \Doctrine\Common\Lexer
+class Lexer extends AbstractLexer
 {
     // All tokens that are not valid identifiers must be < 100
     const T_NONE                 = 1;
@@ -125,29 +127,29 @@ class Lexer extends \Doctrine\Common\Lexer
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function getCatchablePatterns()
     {
-        return array(
+        return [
             '[a-z_][a-z0-9_]*\:[a-z_][a-z0-9_]*(?:\\\[a-z_][a-z0-9_]*)*', // aliased name
             '[a-z_\\\][a-z0-9_]*(?:\\\[a-z_][a-z0-9_]*)*', // identifier or qualified name
             '(?:[0-9]+(?:[\.][0-9]+)*)(?:e[+-]?[0-9]+)?', // numbers
             "'(?:[^']|'')*'", // quoted strings
             '\?[0-9]*|:[a-z_][a-z0-9_]*' // parameters
-        );
+        ];
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function getNonCatchablePatterns()
     {
-        return array('\s+', '(.)');
+        return ['\s+', '(.)'];
     }
 
     /**
-     * @inheritdoc
+     * {@inheritdoc}
      */
     protected function getType(&$value)
     {

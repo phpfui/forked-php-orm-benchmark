@@ -15,17 +15,12 @@ class PDOTest extends \PHPixie\Tests\Database\DriverTest
     public function setUp()
     {
         parent::setUp();
-        $this->connectionStub = $this->getMock('\PHPixie\Database\Driver\PDO\Connection', array('config', 'adapterName'), array(), '', null, false);
+        $this->connectionStub = $this->quickMock('\PHPixie\Database\Driver\PDO\Connection', array('config', 'adapterName'));
         $this->database
                 ->expects($this->any())
                 ->method('get')
                 ->with()
                 ->will($this->returnValue($this->connectionStub));
-        $this->database
-                ->expects($this->any())
-                ->method('parser')
-                ->with ('connectionName')
-                ->will($this->returnValue('parser'));
 
         $this->connectionStub
                         ->expects($this->any())
@@ -53,15 +48,7 @@ class PDOTest extends \PHPixie\Tests\Database\DriverTest
 
     protected function singleAdapterTest($name)
     {
-        $connection = $this->getMock('\PHPixie\Database\Driver\PDO\Connection', array('execute'), array(), '', false);
-        if($name != 'sqlite') {
-            $query = $name === 'pgsql' ? "SET NAMES 'utf8'" : "SET NAMES utf8";
-            $connection
-                ->expects($this->once())
-                ->method('execute')
-                ->with($query)
-                ->will($this->returnValue(null));
-        }
+        $connection = $this->quickMock('\PHPixie\Database\Driver\PDO\Connection', array('execute'));
         $adapter = $this->driver->adapter($name, 'config', $connection);
         $this->assertInstanceOf('PHPixie\Database\Driver\PDO\Adapter\\'.ucfirst($name), $adapter);
         $this->assertAttributeEquals('config', 'config', $adapter);

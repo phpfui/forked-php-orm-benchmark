@@ -7,26 +7,54 @@ namespace Composer\Autoload;
 class ComposerStaticInit954ea5a4266ecdefeb4f12651664153b
 {
     public static $prefixLengthsPsr4 = array (
+        'P' => 
+        array (
+            'Psr\\Log\\' => 8,
+        ),
         'A' => 
         array (
-            'Aura\\Sql\\' => 9,
-            'Aura\\SqlQuery\\' => 14,
+            'Atlas\\Table\\' => 12,
+            'Atlas\\Query\\' => 12,
+            'Atlas\\Pdo\\' => 10,
             'Atlas\\Orm\\' => 10,
+            'Atlas\\Mapper\\' => 13,
+            'Atlas\\Info\\' => 11,
+            'Atlas\\Cli\\' => 10,
         ),
     );
 
     public static $prefixDirsPsr4 = array (
-        'Aura\\Sql\\' => 
+        'Psr\\Log\\' => 
         array (
-            0 => __DIR__ . '/..' . '/aura/sql/src',
+            0 => __DIR__ . '/..' . '/psr/log/Psr/Log',
         ),
-        'Aura\\SqlQuery\\' => 
+        'Atlas\\Table\\' => 
         array (
-            0 => __DIR__ . '/..' . '/aura/sqlquery/src',
+            0 => __DIR__ . '/..' . '/atlas/table/src',
+        ),
+        'Atlas\\Query\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/atlas/query/src',
+        ),
+        'Atlas\\Pdo\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/atlas/pdo/src',
         ),
         'Atlas\\Orm\\' => 
         array (
             0 => __DIR__ . '/..' . '/atlas/orm/src',
+        ),
+        'Atlas\\Mapper\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/atlas/mapper/src',
+        ),
+        'Atlas\\Info\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/atlas/info/src',
+        ),
+        'Atlas\\Cli\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/atlas/cli/src',
         ),
     );
 

@@ -2,27 +2,26 @@
 
 namespace Doctrine\Tests\ORM\Functional\Ticket;
 
-use Doctrine\Common\Collections\ArrayCollection;
-
 /**
  * @group DDC-1113
  * @group DDC-1306
  */
 class DDC1113Test extends \Doctrine\Tests\OrmFunctionalTestCase
 {
-
     public function setUp()
     {
         parent::setUp();
-        try {
-            $this->_schemaTool->createSchema(array(
-                $this->_em->getClassMetadata(__NAMESPACE__ . '\DDC1113Engine'),
-                $this->_em->getClassMetadata(__NAMESPACE__ . '\DDC1113Vehicle'),
-                $this->_em->getClassMetadata(__NAMESPACE__ . '\DDC1113Car'),
-                $this->_em->getClassMetadata(__NAMESPACE__ . '\DDC1113Bus'),
-            ));
-        } catch (\Exception $e) {
 
+        try {
+            $this->_schemaTool->createSchema(
+                [
+                    $this->_em->getClassMetadata(DDC1113Engine::class),
+                    $this->_em->getClassMetadata(DDC1113Vehicle::class),
+                    $this->_em->getClassMetadata(DDC1113Car::class),
+                    $this->_em->getClassMetadata(DDC1113Bus::class),
+                ]
+            );
+        } catch (\Exception $e) {
         }
     }
 
@@ -43,8 +42,11 @@ class DDC1113Test extends \Doctrine\Tests\OrmFunctionalTestCase
         $this->_em->remove($bus);
         $this->_em->remove($car);
         $this->_em->flush();
-    }
 
+        self::assertEmpty($this->_em->getRepository(DDC1113Car::class)->findAll());
+        self::assertEmpty($this->_em->getRepository(DDC1113Bus::class)->findAll());
+        self::assertEmpty($this->_em->getRepository(DDC1113Engine::class)->findAll());
+    }
 }
 
 /**

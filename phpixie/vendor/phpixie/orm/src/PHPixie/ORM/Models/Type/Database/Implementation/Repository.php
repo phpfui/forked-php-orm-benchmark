@@ -31,7 +31,12 @@ abstract class Repository implements \PHPixie\ORM\Models\Type\Database\Repositor
     {
         return $this->config->model;
     }
-    
+
+    public function databaseModel()
+    {
+        return $this->databaseModel;
+    }
+
     public function query()
     {
         return $this->databaseModel->query($this->modelName());
@@ -77,8 +82,7 @@ abstract class Repository implements \PHPixie\ORM\Models\Type\Database\Repositor
             throw new \PHPixie\ORM\Exception\Entity("Deleted models cannot be saved.");
         
         $data = $entity->data();
-        $idField = $this->config->idField;
-        
+
         if($entity->isNew()){
             
             $this->insertEntityData($data);

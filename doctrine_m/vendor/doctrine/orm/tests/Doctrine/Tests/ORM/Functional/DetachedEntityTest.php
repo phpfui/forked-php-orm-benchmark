@@ -2,25 +2,30 @@
 
 namespace Doctrine\Tests\ORM\Functional;
 
+use Doctrine\DBAL\Exception\UniqueConstraintViolationException;
+use Doctrine\ORM\OptimisticLockException;
+use Doctrine\ORM\Proxy\Proxy;
 use Doctrine\Tests\Models\CMS\CmsUser;
 use Doctrine\Tests\Models\CMS\CmsPhonenumber;
 use Doctrine\Tests\Models\CMS\CmsAddress;
 use Doctrine\Tests\Models\CMS\CmsArticle;
-use Doctrine\ORM\UnitOfWork;
+use Doctrine\Tests\OrmFunctionalTestCase;
 
 /**
  * Description of DetachedEntityTest
  *
  * @author robo
  */
-class DetachedEntityTest extends \Doctrine\Tests\OrmFunctionalTestCase
+class DetachedEntityTest extends OrmFunctionalTestCase
 {
-    protected function setUp() {
+    protected function setUp()
+    {
         $this->useModelSet('cms');
         parent::setUp();
     }
 
-    public function testSimpleDetachMerge() {
+    public function testSimpleDetachMerge()
+    {
         $user = new CmsUser;
         $user->name = 'Roman';
         $user->username = 'romanb';
@@ -30,12 +35,9 @@ class DetachedEntityTest extends \Doctrine\Tests\OrmFunctionalTestCase
         $this->_em->clear();
 
         // $user is now detached
-
         $this->assertFalse($this->_em->contains($user));
 
         $user->name = 'Roman B.';
-
-        //$this->assertEquals(UnitOfWork::STATE_DETACHED, $this->_em->getUnitOfWork()->getEntityState($user));
 
         $user2 = $this->_em->merge($user);
 
@@ -46,7 +48,6 @@ class DetachedEntityTest extends \Doctrine\Tests\OrmFunctionalTestCase
 
     public function testSerializeUnserializeModifyMerge()
     {
-        //$this->_em->getConnection()->getConfiguration()->setSQLLogger(new \Doctrine\DBAL\Logging\EchoSQLLogger);
         $user = new CmsUser;
         $user->name = 'Guilherme';
         $user->username = 'gblanco';
@@ -88,8 +89,8 @@ class DetachedEntityTest extends \Doctrine\Tests\OrmFunctionalTestCase
 
         // Merge back in
         $user = $this->_em->merge($user); // merge cascaded to phonenumbers
-        $this->assertInstanceOf('Doctrine\Tests\Models\CMS\CmsUser', $user->phonenumbers[0]->user);
-        $this->assertInstanceOf('Doctrine\Tests\Models\CMS\CmsUser', $user->phonenumbers[1]->user);
+        $this->assertInstanceOf(CmsUser::class, $user->phonenumbers[0]->user);
+        $this->assertInstanceOf(CmsUser::class, $user->phonenumbers[1]->user);
         $im = $this->_em->getUnitOfWork()->getIdentityMap();
         $this->_em->flush();
 
@@ -98,10 +99,10 @@ class DetachedEntityTest extends \Doctrine\Tests\OrmFunctionalTestCase
         $this->assertNotSame($oldPhonenumbers, $phonenumbers, "Merge should replace the Detached Collection with a new PersistentCollection.");
         $this->assertEquals(2, count($phonenumbers), "Failed to assert that two phonenumbers are contained in the merged users phonenumber collection.");
 
-        $this->assertInstanceOf('Doctrine\Tests\Models\CMS\CmsPhonenumber', $phonenumbers[1]);
+        $this->assertInstanceOf(CmsPhonenumber::class, $phonenumbers[1]);
         $this->assertTrue($this->_em->contains($phonenumbers[1]), "Failed to assert that second phonenumber in collection is contained inside EntityManager persistence context.");
 
-        $this->assertInstanceOf('Doctrine\Tests\Models\CMS\CmsPhonenumber', $phonenumbers[0]);
+        $this->assertInstanceOf(CmsPhonenumber::class, $phonenumbers[0]);
         $this->assertTrue($this->_em->getUnitOfWork()->isInIdentityMap($phonenumbers[0]));
         $this->assertTrue($this->_em->contains($phonenumbers[0]), "Failed to assert that first phonenumber in collection is contained inside EntityManager persistence context.");
     }
@@ -113,14 +114,16 @@ class DetachedEntityTest extends \Doctrine\Tests\OrmFunctionalTestCase
     {
         $ph = new CmsPhonenumber();
         $ph->phonenumber = '12345';
+
         $this->_em->persist($ph);
         $this->_em->flush();
         $this->_em->clear();
+
         $this->_em->persist($ph);
-        try {
-            $this->_em->flush();
-            $this->fail();
-        } catch (\Exception $expected) {}
+
+        // since it tries to insert the object twice (with the same PK)
+        $this->expectException(UniqueConstraintViolationException::class);
+        $this->_em->flush();
     }
 
     public function testUninitializedLazyAssociationsAreIgnoredOnMerge()
@@ -143,14 +146,14 @@ class DetachedEntityTest extends \Doctrine\Tests\OrmFunctionalTestCase
         $this->_em->clear();
 
         $address2 = $this->_em->find(get_class($address), $address->id);
-        $this->assertInstanceOf('Doctrine\ORM\Proxy\Proxy', $address2->user);
+        $this->assertInstanceOf(Proxy::class, $address2->user);
         $this->assertFalse($address2->user->__isInitialized__);
         $detachedAddress2 = unserialize(serialize($address2));
-        $this->assertInstanceOf('Doctrine\ORM\Proxy\Proxy', $detachedAddress2->user);
+        $this->assertInstanceOf(Proxy::class, $detachedAddress2->user);
         $this->assertFalse($detachedAddress2->user->__isInitialized__);
 
         $managedAddress2 = $this->_em->merge($detachedAddress2);
-        $this->assertInstanceOf('Doctrine\ORM\Proxy\Proxy', $managedAddress2->user);
+        $this->assertInstanceOf(Proxy::class, $managedAddress2->user);
         $this->assertFalse($managedAddress2->user === $detachedAddress2->user);
         $this->assertFalse($managedAddress2->user->__isInitialized__);
     }
@@ -170,13 +173,13 @@ class DetachedEntityTest extends \Doctrine\Tests\OrmFunctionalTestCase
         $this->_em->flush();
         $this->_em->detach($user);
 
-        $dql = "SELECT u FROM Doctrine\Tests\Models\CMS\CmsUser u WHERE u.id = ?1";
+        $dql = 'SELECT u FROM ' . CmsUser::class . ' u WHERE u.id = ?1';
         $query = $this->_em->createQuery($dql);
         $query->setParameter(1, $user);
 
         $newUser = $query->getSingleResult();
 
-        $this->assertInstanceOf('Doctrine\Tests\Models\CMS\CmsUser', $newUser);
+        $this->assertInstanceOf(CmsUser::class, $newUser);
         $this->assertEquals('gblanco', $newUser->username);
     }
 
@@ -213,10 +216,12 @@ class DetachedEntityTest extends \Doctrine\Tests\OrmFunctionalTestCase
 
         $this->_em->detach($article);
 
-        $sql = "UPDATE cms_articles SET version = version+1 WHERE id = " . $article->id;
+        $sql = 'UPDATE cms_articles SET version = version + 1 WHERE id = ' . $article->id;
         $this->_em->getConnection()->executeUpdate($sql);
 
-        $this->setExpectedException('Doctrine\ORM\OptimisticLockException', 'The optimistic lock failed, version 1 was expected, but is actually 2');
+        $this->expectException(OptimisticLockException::class);
+        $this->expectExceptionMessage('The optimistic lock failed, version 1 was expected, but is actually 2');
+
         $this->_em->merge($article);
     }
 }

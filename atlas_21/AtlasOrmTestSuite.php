@@ -1,7 +1,7 @@
 <?php
 
-use Atlas\Orm\AtlasContainer;
-use Aura\Sql\ExtendedPdo;
+use Atlas\Orm\Atlas;
+use Atlas\Pdo\Connection;
 
 require_once dirname(__FILE__) . '/../AbstractTestSuite.php';
 
@@ -11,10 +11,6 @@ require_once dirname(__FILE__) . '/../AbstractTestSuite.php';
  */
 class AtlasOrmTestSuite extends AbstractTestSuite
 {
-    /**
-     * @var AtlasContainer
-     */
-    private $atlasContainer;
 
     /**
      * @var \Atlas\Orm\Atlas
@@ -24,15 +20,14 @@ class AtlasOrmTestSuite extends AbstractTestSuite
     function initialize()
     {
         $loader = require_once "vendor/autoload.php";
-        $loader->add('', __DIR__ . '/DataSource');
+        $loader->add('', __DIR__ . '/src');
 
-        $this->con            = new PDO('sqlite::memory:');
-        $this->atlasContainer = new AtlasContainer(new ExtendedPdo($this->con));
-        $this->atlasContainer->setMappers([
-            AuthorMapper::CLASS,
-            BookMapper::CLASS
-        ]);
-        $this->atlas = $this->atlasContainer->getAtlas();
+        $this->con = Connection::new('sqlite:memory');
+
+        $this->atlas = Atlas::new(
+            $this->con
+        );
+
         $this->initTables();
     }
 
@@ -42,47 +37,47 @@ class AtlasOrmTestSuite extends AbstractTestSuite
 
     function beginTransaction()
     {
-        $this->transaction = $this->atlas->newTransaction();
+        $this->transaction = $this->atlas->beginTransaction();
     }
 
     function commit()
     {
-        $this->transaction->exec();
+        $this->atlas->commit();
     }
 
     function runAuthorInsertion($i)
     {
-        $author = $this->atlas->newRecord(AuthorMapper::class, [
+        $author = $this->atlas->newRecord(\Author\Author::class, [
             'first_name' => 'John' . $i,
             'last_name'  => 'Doe' . $i,
         ]);
-        $this->transaction->insert($author);
+        $this->atlas->insert($author);
         $this->authors[] = $this->con->lastInsertId();
     }
 
     function runBookInsertion($i)
     {
-        $book = $this->atlas->newRecord(BookMapper::class, [
+        $book = $this->atlas->newRecord(\Book\Book::class, [
             'title'     => 'Hello' . $i,
             'isbn'      => '1234' . $i,
             'price'     => $i,
             'author_id' => $this->authors[array_rand($this->authors)],
         ]);
-        $this->transaction->insert($book);
+        $this->atlas->insert($book);
         $this->books[] = $this->con->lastInsertId();
 
     }
 
     function runPKSearch($i)
     {
-        $author = $this->atlas->fetchRecord(AuthorMapper::class, $i);
+        $author = $this->atlas->fetchRecord(\Author\Author::class, $i);
     }
 
     function runHydrate($i)
     {
         $stmt = $this->atlas
-            ->select(BookMapper::class)
-            ->where('price > ?', $i)
+            ->select(\Book\Book::class)
+            ->where('price > ', $i)
             ->limit(5);
 
         foreach ($stmt->fetchRecordSet() as $book) {
@@ -92,8 +87,8 @@ class AtlasOrmTestSuite extends AbstractTestSuite
     function runComplexQuery($i)
     {
         $stmt = $this->atlas
-            ->select(AuthorMapper::class)
-            ->where('id > ? OR (first_name || last_name) = ? ', $this->authors[array_rand($this->authors)], 'John Doe')
+            ->select(\Author\Author::class)
+            ->whereSprintf('id > %s OR (first_name || last_name) = %s ', (int)$this->authors[array_rand($this->authors)], 'John Doe')
             ->fetchCount();
 
     }
@@ -101,12 +96,13 @@ class AtlasOrmTestSuite extends AbstractTestSuite
     function runJoinSearch($i)
     {
         $book = $this->atlas
-            ->select(BookMapper::class)
-            ->where('title=?', 'Hello' . $i)
-            ->with([ 'author' ])
+            ->select(\Book\Book::class)
+            ->where('title=', 'Hello' . $i)
+            ->with(['author'])
             ->fetchRecord();
 
         return $book;
         //$author = $book->author()->select('id', 'first_name', 'last_name', 'email')->fetch();
     }
+
 }

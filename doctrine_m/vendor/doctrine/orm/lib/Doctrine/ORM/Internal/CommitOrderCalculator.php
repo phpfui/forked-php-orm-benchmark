@@ -52,16 +52,16 @@ class CommitOrderCalculator
      * - <b>dependencyList</b> (array<string>)
      * Map of node dependencies defined as hashes.
      *
-     * @var array<stdClass>
+     * @var array<\stdClass>
      */
-    private $nodeList = array();
+    private $nodeList = [];
 
     /**
      * Volatile variable holding calculated nodes during sorting process.
      *
      * @var array
      */
-    private $sortedNodeList = array();
+    private $sortedNodeList = [];
 
     /**
      * Checks for node (vertex) existence in graph.
@@ -90,7 +90,7 @@ class CommitOrderCalculator
         $vertex->hash           = $hash;
         $vertex->state          = self::NOT_VISITED;
         $vertex->value          = $node;
-        $vertex->dependencyList = array();
+        $vertex->dependencyList = [];
 
         $this->nodeList[$hash] = $vertex;
     }
@@ -136,8 +136,8 @@ class CommitOrderCalculator
 
         $sortedList = $this->sortedNodeList;
 
-        $this->nodeList       = array();
-        $this->sortedNodeList = array();
+        $this->nodeList       = [];
+        $this->sortedNodeList = [];
 
         return array_reverse($sortedList);
     }
@@ -162,8 +162,19 @@ class CommitOrderCalculator
                     break;
 
                 case self::IN_PROGRESS:
-                    if (isset($adjacentVertex->dependencyList[$vertex->hash]) && 
+                    if (isset($adjacentVertex->dependencyList[$vertex->hash]) &&
                         $adjacentVertex->dependencyList[$vertex->hash]->weight < $edge->weight) {
+
+                        // If we have some non-visited dependencies in the in-progress dependency, we
+                        // need to visit them before adding the node.
+                        foreach ($adjacentVertex->dependencyList as $adjacentEdge) {
+                            $adjacentEdgeVertex = $this->nodeList[$adjacentEdge->to];
+
+                            if ($adjacentEdgeVertex->state === self::NOT_VISITED) {
+                                $this->visit($adjacentEdgeVertex);
+                            }
+                        }
+
                         $adjacentVertex->state = self::VISITED;
 
                         $this->sortedNodeList[] = $adjacentVertex->value;

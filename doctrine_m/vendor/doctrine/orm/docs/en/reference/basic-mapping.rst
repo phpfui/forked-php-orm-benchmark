@@ -270,7 +270,7 @@ A cookbook article shows how to define :doc:`your own custom mapping types
 .. warning::
 
     All Date types assume that you are exclusively using the default timezone
-    set by `date_default_timezone_set() <http://docs.php.net/manual/en/function.date-default-timezone-set.php>`_
+    set by `date_default_timezone_set() <http://php.net/manual/en/function.date-default-timezone-set.php>`_
     or by the php.ini configuration ``date.timezone``. Working with
     different timezones will cause troubles and unexpected behavior.
 
@@ -295,7 +295,8 @@ annotation.
         class Message
         {
             /**
-             * @Id @Column(type="integer")
+             * @Id
+             * @Column(type="integer")
              * @GeneratedValue
              */
             private $id;
@@ -363,6 +364,8 @@ Here is the list of possible generation strategies:
    thus generated) by your code. The assignment must take place before
    a new entity is passed to ``EntityManager#persist``. NONE is the
    same as leaving off the @GeneratedValue entirely.
+-  ``CUSTOM``: With this option, you can use the ``@CustomIdGenerator`` annotation.
+   It will allow you to pass a :doc:`class of your own to generate the identifiers.<_annref_customidgenerator>`
 
 Sequence Generator
 ^^^^^^^^^^^^^^^^^^

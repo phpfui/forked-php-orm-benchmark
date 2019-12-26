@@ -19,7 +19,6 @@
 
 namespace Doctrine\ORM\Query;
 
-use Doctrine\DBAL\Types\Type;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Doctrine\ORM\Mapping\MappingException;
@@ -98,7 +97,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
      *
      * @return void
      */
-    public function addRootEntityFromClassMetadata($class, $alias, $renamedColumns = array(), $renameMode = null)
+    public function addRootEntityFromClassMetadata($class, $alias, $renamedColumns = [], $renameMode = null)
     {
         $renameMode     = $renameMode ?: $this->defaultRenameMode;
         $columnAliasMap = $this->getColumnAliasMap($class, $renameMode, $renamedColumns);
@@ -120,7 +119,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
      *
      * @return void
      */
-    public function addJoinedEntityFromClassMetadata($class, $alias, $parentAlias, $relation, $renamedColumns = array(), $renameMode = null)
+    public function addJoinedEntityFromClassMetadata($class, $alias, $parentAlias, $relation, $renamedColumns = [], $renameMode = null)
     {
         $renameMode     = $renameMode ?: $this->defaultRenameMode;
         $columnAliasMap = $this->getColumnAliasMap($class, $renameMode, $renamedColumns);
@@ -140,7 +139,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
      *
      * @throws \InvalidArgumentException
      */
-    protected function addAllClassFields($class, $alias, $columnAliasMap = array())
+    protected function addAllClassFields($class, $alias, $columnAliasMap = [])
     {
         $classMetadata = $this->em->getClassMetadata($class);
         $platform      = $this->em->getConnection()->getDatabasePlatform();
@@ -207,8 +206,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
                 return $columnName . $this->sqlCounter++;
 
             case self::COLUMN_RENAMING_CUSTOM:
-                return isset($customRenameColumns[$columnName])
-                    ? $customRenameColumns[$columnName] : $columnName;
+                return $customRenameColumns[$columnName] ?? $columnName;
 
             case self::COLUMN_RENAMING_NONE:
                 return $columnName;
@@ -233,7 +231,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
             $mode = self::COLUMN_RENAMING_CUSTOM;
         }
 
-        $columnAlias = array();
+        $columnAlias = [];
         $class       = $this->em->getClassMetadata($className);
 
         foreach ($class->getColumnNames() as $columnName) {
@@ -367,7 +365,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
 
     /**
      * Adds the entity result mapping of the results of native SQL queries to the result set.
-     * 
+     *
      * @param ClassMetadataInfo $classMetadata
      * @param array             $entityMapping
      * @param string            $alias
@@ -408,7 +406,7 @@ class ResultSetMappingBuilder extends ResultSetMapping
                         $this->addFieldResult($alias, $field['column'], $fieldName, $classMetadata->name);
                     }
                 } else {
-                    if( ! isset($classMetadata->fieldMappings[$fieldName])) {
+                    if ( ! isset($classMetadata->fieldMappings[$fieldName])) {
                         throw new \InvalidArgumentException("Entity '".$classMetadata->name."' has no field '".$fieldName."'. ");
                     }
 
@@ -437,13 +435,12 @@ class ResultSetMappingBuilder extends ResultSetMapping
      *
      * @return string
      */
-    public function generateSelectClause($tableAliases = array())
+    public function generateSelectClause($tableAliases = [])
     {
         $sql = "";
 
         foreach ($this->columnOwnerMap as $columnName => $dqlAlias) {
-            $tableAlias = isset($tableAliases[$dqlAlias])
-                ? $tableAliases[$dqlAlias] : $dqlAlias;
+            $tableAlias = $tableAliases[$dqlAlias] ?? $dqlAlias;
 
             if ($sql) {
                 $sql .= ", ";
@@ -471,6 +468,6 @@ class ResultSetMappingBuilder extends ResultSetMapping
      */
     public function __toString()
     {
-        return $this->generateSelectClause(array());
+        return $this->generateSelectClause([]);
     }
 }

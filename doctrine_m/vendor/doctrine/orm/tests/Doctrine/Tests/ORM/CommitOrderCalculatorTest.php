@@ -4,6 +4,7 @@ namespace Doctrine\Tests\ORM;
 
 use Doctrine\ORM\Internal\CommitOrderCalculator;
 use Doctrine\ORM\Mapping\ClassMetadata;
+use Doctrine\Tests\OrmTestCase;
 
 /**
  * Tests of the commit order calculation.
@@ -12,7 +13,7 @@ use Doctrine\ORM\Mapping\ClassMetadata;
  * can have many valid orderings, so you may want to build a graph that has only
  * 1 valid order to simplify your tests.
  */
-class CommitOrderCalculatorTest extends \Doctrine\Tests\OrmTestCase
+class CommitOrderCalculatorTest extends OrmTestCase
 {
     private $_calc;
 
@@ -23,11 +24,11 @@ class CommitOrderCalculatorTest extends \Doctrine\Tests\OrmTestCase
 
     public function testCommitOrdering1()
     {
-        $class1 = new ClassMetadata(__NAMESPACE__ . '\NodeClass1');
-        $class2 = new ClassMetadata(__NAMESPACE__ . '\NodeClass2');
-        $class3 = new ClassMetadata(__NAMESPACE__ . '\NodeClass3');
-        $class4 = new ClassMetadata(__NAMESPACE__ . '\NodeClass4');
-        $class5 = new ClassMetadata(__NAMESPACE__ . '\NodeClass5');
+        $class1 = new ClassMetadata(NodeClass1::class);
+        $class2 = new ClassMetadata(NodeClass2::class);
+        $class3 = new ClassMetadata(NodeClass3::class);
+        $class4 = new ClassMetadata(NodeClass4::class);
+        $class5 = new ClassMetadata(NodeClass5::class);
 
         $this->_calc->addNode($class1->name, $class1);
         $this->_calc->addNode($class2->name, $class2);
@@ -43,15 +44,15 @@ class CommitOrderCalculatorTest extends \Doctrine\Tests\OrmTestCase
         $sorted = $this->_calc->sort();
 
         // There is only 1 valid ordering for this constellation
-        $correctOrder = array($class5, $class1, $class2, $class3, $class4);
+        $correctOrder = [$class5, $class1, $class2, $class3, $class4];
 
         $this->assertSame($correctOrder, $sorted);
     }
 
     public function testCommitOrdering2()
     {
-        $class1 = new ClassMetadata(__NAMESPACE__ . '\NodeClass1');
-        $class2 = new ClassMetadata(__NAMESPACE__ . '\NodeClass2');
+        $class1 = new ClassMetadata(NodeClass1::class);
+        $class2 = new ClassMetadata(NodeClass2::class);
 
         $this->_calc->addNode($class1->name, $class1);
         $this->_calc->addNode($class2->name, $class2);
@@ -62,9 +63,42 @@ class CommitOrderCalculatorTest extends \Doctrine\Tests\OrmTestCase
         $sorted = $this->_calc->sort();
 
         // There is only 1 valid ordering for this constellation
-        $correctOrder = array($class2, $class1);
+        $correctOrder = [$class2, $class1];
 
         $this->assertSame($correctOrder, $sorted);
+    }
+
+    public function testCommitOrdering3()
+    {
+        // this test corresponds to the GH7259Test::testPersistFileBeforeVersion functional test
+        $class1 = new ClassMetadata(NodeClass1::class);
+        $class2 = new ClassMetadata(NodeClass2::class);
+        $class3 = new ClassMetadata(NodeClass3::class);
+        $class4 = new ClassMetadata(NodeClass4::class);
+
+        $this->_calc->addNode($class1->name, $class1);
+        $this->_calc->addNode($class2->name, $class2);
+        $this->_calc->addNode($class3->name, $class3);
+        $this->_calc->addNode($class4->name, $class4);
+
+        $this->_calc->addDependency($class4->name, $class1->name, 1);
+        $this->_calc->addDependency($class1->name, $class2->name, 1);
+        $this->_calc->addDependency($class4->name, $class3->name, 1);
+        $this->_calc->addDependency($class1->name, $class4->name, 0);
+
+        $sorted = $this->_calc->sort();
+
+        // There is only multiple valid ordering for this constellation, but
+        // the class4, class1, class2 ordering is important to break the cycle
+        // on the nullable link.
+        $correctOrders = [
+            [$class4, $class1, $class2, $class3],
+            [$class4, $class1, $class3, $class2],
+            [$class4, $class3, $class1, $class2],
+        ];
+
+        // We want to perform a strict comparison of the array
+        $this->assertContains($sorted, $correctOrders, '', false, true, true);
     }
 }
 

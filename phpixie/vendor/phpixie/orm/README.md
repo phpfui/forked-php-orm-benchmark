@@ -5,7 +5,7 @@ PHPixie ORM library
 [![Build Status](https://travis-ci.org/PHPixie/ORM.svg?branch=master)](https://travis-ci.org/PHPixie/ORM)
 [![Test Coverage](https://codeclimate.com/github/PHPixie/ORM/badges/coverage.svg)](https://codeclimate.com/github/PHPixie/ORM)
 [![Code Climate](https://codeclimate.com/github/PHPixie/ORM/badges/gpa.svg)](https://codeclimate.com/github/PHPixie/ORM)
-[![HHVM Status](https://img.shields.io/hhvm/phpixie/orm.svg?style=flat-square)](http://hhvm.h4cc.de/package/phpixie/orm)
+[![HHVM Status](https://img.shields.io/hhvm/phpixie/orm.svg?style=flat-sшquare)](http://hhvm.h4cc.de/package/phpixie/orm)
 
 [![Author](http://img.shields.io/badge/author-@dracony-blue.svg?style=flat-square)](https://twitter.com/dracony)
 [![Source Code](http://img.shields.io/badge/source-phpixie/orm-blue.svg?style=flat-square)](https://github.com/phpixie/orm)
@@ -27,6 +27,7 @@ PHPixie ORM library
     - [Embedded Models in MongoDB](#embedded-models-in-mongodb)
         - [Embeds One](#embeds-one)
         - [Embeds Many](#embeds-many)
+    - [Nested Set](#nested-set)
 
 
 ## Initializing
@@ -46,12 +47,12 @@ $orm = new \PHPixie\ORM($database, $slice->arrayData(array(
 ```
 
 > If you are using the PHPixie Framework the ORM component is already set up for you.
-> It is accessable via `$frameworkBuilder->components()->orm()` and can be confgigured
+> It is accessable via `$frameworkBuilder->components()->orm()` and can be configured
 > in the `config/orm.php` file of your bundle.
 
 ## Models
 
-A Model consists of a Repository, Queries and Entities and will usuaully map to a table in a relational database
+A Model consists of a Repository, Queries and Entities and will usually map to a table in a relational database
 or a document collection in MongoDB.
 
 * Entity - a single item, stored in the database, e.g. an article
@@ -67,14 +68,14 @@ $newArticle   = $repository->createEntity();
 $articleQuery = $repository->query();
 
 // shorthands
-$newArtcile   = $orm->createEntity('article');
+$newArticle   = $orm->createEntity('article');
 $articleQuery = $orm->query('article');
 ```
 
-### Configuration 
+### Configuration
 
-By default ORM assumes that thte table name is the plural of the name of the model, and that the name of the primary key is 'id'.
-For MongoDB database the default id field '_id' is assumed. You can ovveride these settings for a particular model in your
+By default ORM assumes that the table name is the plural of the name of the model, and that the name of the primary key is 'id'.
+For MongoDB database the default id field '_id' is assumed. You can override these settings for a particular model in your
 configuration file:
 
 ```php
@@ -83,9 +84,9 @@ return array(
         'article' => array(
             'type'       => 'database',
             'connection' => 'default',
-            'idField'    => 'id'
+            'id'         => 'id'
         ),
-        
+
         // you can also define embedded models
         // if you are using MongoDB,
         // more on that later
@@ -105,7 +106,7 @@ $article->getField('title', 'No Title');
 
 // Getting a required field
 // Will throw an Exception if it is not set
-$article->getRequiredField('title');1
+$article->getRequiredField('title');
 
 // Convert to a simple PHP object
 // Usefull for serializing
@@ -138,7 +139,7 @@ $articles = $orm->query('article')
 // Actually the in() method can be used
 // to also include subqueries and entities.
 //
-// This will select artciles with id '1',
+// This will select articles with id '1',
 // or the id same as $someArticle, and
 // anything matched by $subQuery
 $articles = $orm->query('article')
@@ -203,6 +204,9 @@ $articles = $articles->asArray();
 // Convert it into plain objects,
 // useful for serializing
 $data = $articles->asArray(true);
+
+// Convert it into associative array
+$data = $articles->asArray(true, 'id');
 ```
 
 If you are going to access a particular relationship for multiple items that you are selecting
@@ -291,7 +295,7 @@ class UserRepository extends \PHPixie\ORM\Wrappers\Type\Database\Repository
         if($entity->getField('name') === null) {
             throw new \Exception("You must provide a user name");
         }
-        
+
         $this->repository->save($entity);
     }
 }
@@ -306,41 +310,42 @@ class ORMWrappers extends \PHPixie\ORM\Wrappers\Implementation
     protected $databaseEntities = array(
         'user'
     );
-    
+
     // Model names of queries to wrap
     protected $databaseQueries = array(
         'user'
     );
-    
+
     // Model names of repositories to wrap
-    protected $databaseQueries = array(
+    protected $databaseRepositories = array(
         'user'
     );
-    
+
     // Model names of embedded entities to wrap
     // We cover them later in this manual
     protected $embeddedEntities = array(
         'post'
     );
-    
+
     // Provide methods to build the wrappers
-    
+
     public function userEntity($entity)
     {
         return new UserEntity($entity);
     }
-    
+
     public function userQuery($query)
     {
         return new UserQuery($query);
     }
-    
+
     public function userRepository($repository)
     {
         return new UserRepository($repository);
     }
-    
+
     public function postEntity($entity)
+    {
         return new PostEntity($entity);
     }
 }
@@ -363,7 +368,7 @@ $orm = new \PHPixie\ORM($database, $slice->arrayData(array(
 PHPixie supports one-to-many, one-to-one, many-to-many relationships,
 as well as embeds-one and embeds-many for embedded models. Each relationship
 defines a set of properties that are added to entities and queries
-and can be used to access related data. You can configure them using the 
+and can be used to access related data. You can configure them using the
 `relationships` key in the configuration file:
 
 ```php
@@ -394,14 +399,14 @@ Before looking at actual relationship types, let's see how can you define condit
 
 // Finding all categories with
 // at lest one article
-// 
+//
 // Note that you use the property name,
 // and not the model name here.
 // You can modify property names
 // in your config file, more on them later
 $categoryQuery->relatedTo('articles');
 
-// or all artciles with a category
+// or all articles with a category
 $articleQuery->relatedTo('category');
 
 // Use logic operators
@@ -436,7 +441,7 @@ $categoryQuery->relatedTo('articles', function($query) {
 });
 
 // Or a shorthand
-// Yo'll be using this a lot
+// You'll be using this a lot
 $categoryQuery->where('articles.title', 'Welcome');
 
 // You can use the '.'
@@ -456,47 +461,47 @@ $categoryQuery->relatedTo('articles.author', function($query) {
 
 ### One To Many
 
-This is the most common relationship. A category can own many articles, a topic has manty replies, etc.
+This is the most common relationship. A category can own many articles, a topic has many replies, etc.
 
 ```php
-// Configuration 
+// Configuration
 return array(
     'models' => array(
         // ...
     ),
     'relationships' => array(
         //...
-        
+
         array(
             // mandatory options
             'type'  => 'oneToMany',
             'owner' => 'category',
             'items' => 'article',
-            
+
             // The following keys are optional
             // and will fallback to the defaults
             // based on model names
-            
+
             'ownerOptions' => array(
                 // the name of the property added to the owner
                 // e.g. $category->articles();
                 //
                 // defaults to the plural of the item model
-                'property' => 'articles'
+                'itemsProperty' => 'articles'
             ),
-            
+
             'itemsOptions' => array(
-            
+
                 // the name of the property added to items
                 // e.g. $article->category()
                 //
                 // defaults to the owner model
-                'property' => 'category',
-                
+                'ownerProperty' => 'category',
+
                 // the field that is used to link items
                 // defaults to '<property>Id'
                 'ownerKey' => 'categoryId',
-                
+
                 // The default behavior is to set
                 // the field defined in ownerKey to null
                 // when the owner gets deleted
@@ -510,7 +515,7 @@ return array(
 );
 ```
 
-Now that we ave relationship properties defined we may start using them:
+Now that we have relationship properties defined we may start using them:
 
 ```php
 // Using with entities
@@ -523,7 +528,7 @@ $category = $article->category();
 // Get category articles
 $articles = $category->articles();
 
-// Add artcle to category
+// Add article to category
 $category->articles->add($article);
 
 // Remove article from category
@@ -554,8 +559,8 @@ $articleQuery
 $category->articles->add($articleQuery);
 ```
 
-Queries also have properties, just like Entities do. This allows yout to perform more operations with
-less calls tot he database.
+Queries also have properties, just like Entities do. This allows you to perform more operations with
+less calls to the database.
 
 ```php
 // Assign articles to a category
@@ -570,7 +575,7 @@ $articlesQuery->category->set($category);
 // Unset categories for all articles
 $orm->query('aricle')
     ->category->remove();
-    
+
 // Unset only some ctaegories
 $categoryQuery->where('title', 'PHP');
 $orm->query('aricle')
@@ -601,51 +606,51 @@ $categoryQuery = $orm->query('category')
 
 ### One to One
 
-One to One relationships are very similar to One To Many. The main difference isthat as soon as you attach
+One to One relationships are very similar to One To Many. The main difference is that as soon as you attach
 a new item to an owner, the previous item gets detached. A good example of this would be a relationship between
 an auction lot and the highest bidder. As soon as we set a new person as the highest bidder the old one is unset.
 Another example wold be tasks and workers. Where each task can be performed by a single worker.
 
 ```php
-// Configuration 
+// Configuration
 return array(
     'models' => array(
         // ...
     ),
     'relationships' => array(
         //...
-        
+
         array(
             // mandatory options
             'type'  => 'oneToOne',
             'owner' => 'worker',
-            'items' => 'task',
-            
+            'item' => 'task',
+
             // The following keys are optional
             // and will fallback to the defaults
             // based on model names
-            
+
             'ownerOptions' => array(
                 // the name of the property added to the owner
                 // e.g. $worker->task();
                 //
                 // Unlike manyToMany this uses
                 // a singular case by default
-                'property' => 'task'
+                'itemProperty' => 'task'
             ),
-            
+
             // note it's 'itemOptions' here
             // but 'itemsOptions' for One To Many
             'itemOptions' => array(
-            
+
                 // the name of the property added to items
                 // e.g. $task->worker()
-                'property' => 'worker',
-                
+                'ownerProperty' => 'worker',
+
                 // the field that is used to link items
                 // defaults to '<property>Id'
                 'ownerKey' => 'workerId',
-                
+
                 // The default behavior is to set
                 // the field defined in ownerKey to null
                 // when the owner gets deleted
@@ -686,43 +691,43 @@ The most common many-to-many relationship is between articles and tags. These re
 table (or a MongoDB collection) to store the links between items.
 
 ```php
-// Configuration 
+// Configuration
 return array(
     'models' => array(
         // ...
     ),
     'relationships' => array(
         //...
-        
+
         array(
             // mandatory options
             'type'  => 'manyToMany',
             'left'  => 'article',
             'right' => 'tag',
-            
+
             // The following keys are optional
             // and will fallback to the defaults
             // based on model names
-            
+
             'leftOptions' => array(
                 'property' => 'tags'
             ),
-            
+
             'rightOptions' => array(
                 'property' => 'articles'
             ),
-            
+
             // depends on property names
             // defaults to <rightProperty><leftProperty>
             'pivot' => 'articlesTags',
 
-            
+
             'pivotOptions' => array(
-            
+
                 // defaults to the connection
                 // of the left model
                 'connection' => 'default',
-                
+
                 // columns in pivot table
                 // default to '<property>Id'
                 'leftKey'  => 'articleId',
@@ -733,7 +738,7 @@ return array(
 );
 ```
 
-Using a many-to-many relationship is simiar to using the owner side of a one-to-many one. 
+Using a many-to-many relationship is simiar to using the owner side of a one-to-many one.
 
 ```php
 // Add
@@ -749,13 +754,13 @@ $article->tags->removeAll();
 $orm->query('article')
     ->where('status', 'published')
     ->tags->removeAll();
-    
+
 // Construct a tag query from article query
 $tagQuery = $orm->query('article')
     ->where('status', 'published')
     ->tags();
-    
-// Everything else can be used 
+
+// Everything else can be used
 // in the same way as categories
 // in the one-to-many examples
 ```
@@ -770,7 +775,7 @@ $articleQuery->tags->add($tagQuery);
 ```
 
 > A lot of work went into optimizing these query operations, and at the moment no other PHP ORM
-> supports editing relationships between queries. Instread of requiring m*n queries to edit
+> supports editing relationships between queries. Instead of requiring m*n queries to edit
 > many-to-many relationships, the query approach can achieve it in one go.
 
 ## Embedded Models in MongoDB
@@ -781,22 +786,22 @@ MongoDB supports nested documents, which allows using embedded models. E.g. the 
 {
     "title" : "Welcome",
     //...
-    
+
     "author" : {
-        "name" : "Dracony,
+        "name" : "Dracony",
         //...
     }
 }
 ```
 
-Embedded models consis only of Entities and have neither Repositories nor Queries.
+Embedded models consist only of Entities and have neither Repositories nor Queries.
 Subdocuments and subarrays are not automatically registered as embedded relationships,
 you have to do it inside your configuration:
 
 ```php
 return array(
     'models' => array(
-        
+
         // Some database models
         'article' => array(),
         'topic'   => array(),
@@ -806,14 +811,14 @@ return array(
             'type' => 'embedded'
         ),
     ),
-    
+
     'relationships' => array(
         array(
             'type'  => 'embedsOne',
             'owner' => 'article',
             'item'  => 'author'
         ),
-        
+
         array(
             'type'  => 'embedsOne',
             'owner' => 'topic',
@@ -835,7 +840,7 @@ $article->save();
 // Conditions are specified as usual
 $articleQuery
     ->where('author.name', 'Dracony');
-    
+
 // To specify a subdocument condition
 // use a '>' separator.
 //
@@ -850,24 +855,24 @@ $articleQuery
 This is a relationship with a subdocument like the above article author example.
 
 ```php
-// Configuration 
+// Configuration
 return array(
     'models' => array(
         // ...
     ),
     'relationships' => array(
         //...
-        
+
         array(
             // mandatory options
             'type'  => 'embedsOne',
             'owner' => 'article',
             'item'  => 'author',
-            
+
             // The following keys are optional
             // and will fallback to the defaults
             // based on model names
-            
+
             'ownerOptions' => array(
                 // the name of the property added to the owner
                 // e.g. $article->author();
@@ -875,15 +880,15 @@ return array(
                 // Defaults to item model name
                 'property' => 'task',
             ),
-            
+
             'itemOptions' => array(
-                
+
                 // Dot separated path
                 // to the document within owner
                 //
                 // Defaults to owner property name
                 'path' => 'author'
-                
+
                 // You can use nested paths
                 // e.g. 'authors.editor'
             )
@@ -939,41 +944,41 @@ Defines a relationship with an embedded array of subdocuments. E.g. forum topic 
 ```
 
 ```php
-// Configuration 
+// Configuration
 return array(
     'models' => array(
         // ...
     ),
     'relationships' => array(
         //...
-        
+
         array(
             // mandatory options
             'type'   => 'embedsMany',
             'owner'  => 'topic',
             'items'  => 'reply',
-            
+
             // The following keys are optional
             // and will fallback to the defaults
             // based on model names
-            
+
             'ownerOptions' => array(
                 // the name of the property added to the owner
                 // e.g. $topic->replies();
                 //
-                // Defaults to the plural 
+                // Defaults to the plural
                 // of the item model name
                 'property' => 'replies',
             ),
-            
+
             'itemOptions' => array(
-                
+
                 // Dot separated path
                 // to the document within owner
                 //
                 // Defaults to owner property name
                 'path' => 'replies'
-                
+
                 // You can use nested paths
                 // e.g. 'content.replies'
             )
@@ -1029,3 +1034,130 @@ $topic->replies[2] = $reply;
 $exists = isset($topic->replies[2]);
 unset($topic->replies[2]);
 ```
+
+### Nested Set
+
+Nested Set is an efficient approach to storing trees in SQL databases. A good
+example would be storing category and comment trees. PHPixie is the only PHP
+framework to optimize it even further by namespacing subtrees which results in
+much faster inserts and updates to the tree. The code behind it is more complex
+than the usual Nested Set implementation, but is really simple from the user
+perspective.
+
+```php
+// Configuration
+return array(
+    'models' => array(
+        // ...
+    ),
+    'relationships' => array(
+        //...
+
+        array(
+            // mandatory options
+            'type'  => 'nestedSet',
+            'model'  => 'category',
+
+            // Nested Set requires additional
+            // fields to be present in your table.
+            // All of them are INTEGER
+            // These are their default names
+            'leftKey'   => 'left',
+            'rightKey'   => 'right',
+            'depthKey'  => 'depth',
+            'rootIdKey' => 'rootId',
+
+            // You can also customize the
+            // relationship property names
+            'parentProperty' => 'parent',
+            'childrenProperty' => 'children',
+
+            // Defaults to "all<plural of parentProperty>"
+            'allParentsProperty' => 'allParents'
+
+            // Defaults to "all<childrenProperty>"
+            'allChildrenProperty' => 'allChildren'
+        )
+    )
+);
+```
+
+This relationship defines four relationship properties instead of the usual two.
+The `children` property refers to immediate children, while `allChildren` represents
+all children of a node. In the same way `parent` is the immediate parent and 
+`allParents` relates to all parents of the node.
+
+The basic usage is straightforward an similar to the one-to-many relationship.
+
+```php
+// Move child to parent
+$category->children->add($subcategory);
+
+// or
+$subcategory->parent->set($category);
+
+// Remove child from parent
+$subcategory->parent->remove();
+
+// Remove all children from node
+$category->children->removeAll();
+
+// Find all root nodes and preload
+// their children recursively.
+$categories = $orm->query('category')
+    ->notRelatedTo('parent') // root nodes have no parents
+    ->find(array('children'));
+```
+
+Some more advanced usage:
+
+```php
+// Get a query representing
+// all children recursively
+$allChildrenQuery = $category->children->allQuery();
+$allChidlren = $allChildrenQuery->find();
+
+// Same with getting all parents parents
+$allParents = $category->parent->allQuery()->find();
+
+// Find a category with name 'Trees' that is
+// a descendant of 'Plants'
+$query
+    ->where('name', 'Trees')
+    ->relatedTo('allParents', function($query) {
+        $query->where('name', 'Plants');
+    })
+    ->find();
+    
+// or like this
+$query
+    ->where('name', 'Plants')
+    ->allChildren()
+        ->where('name', 'Trees')
+        ->find();
+```
+
+Special caution has to made when deleting nodes. PHPixie will only
+allow you to delete items if they either don't have any children
+or their children are also being deleted. For example:
+
+```php
+$plants->children->add($trees);
+$plants->children->add($flowers);
+
+// An exception will be thrown
+$plants->delete();
+
+// move children away from the node
+$plants->children->removeAll();
+//now it's safe to delete
+$plants->delete();
+
+// or delete all three,
+$query->in(array($plants, $trees, $flowers))->delete();
+```
+
+
+> The important part is to remember that `parent` and `children` refer
+> only to the immediate parent an children, while `allParents` and 
+> `allChildren` refer to all related nodes recursively.

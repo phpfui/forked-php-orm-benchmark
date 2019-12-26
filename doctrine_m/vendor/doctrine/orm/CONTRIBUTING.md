@@ -44,12 +44,12 @@ Please try to add a test for your pull-request.
 You can run the unit-tests by calling ``vendor/bin/phpunit`` from the root of the project.
 It will run all the tests with an in memory SQLite database.
 
-In order to do that, you will need a fresh copy of doctrine2, and you
+In order to do that, you will need a fresh copy of the ORM, and you
 will have to run a composer installation in the project:
 
 ```sh
-git clone git@github.com:doctrine/doctrine2.git
-cd doctrine2
+git clone git@github.com:doctrine/orm.git
+cd orm
 curl -sS https://getcomposer.org/installer | php --
 ./composer.phar install
 ```
@@ -66,7 +66,7 @@ sqlite database.
 Tips for creating unit tests:
 
 1. If you put a test into the `Ticket` namespace as described above, put the testcase and all entities into the same class.
-   See `https://github.com/doctrine/doctrine2/tree/master/tests/Doctrine/Tests/ORM/Functional/Ticket/DDC2306Test.php` for an
+   See `https://github.com/doctrine/orm/tree/master/tests/Doctrine/Tests/ORM/Functional/Ticket/DDC2306Test.php` for an
    example.
 
 ## Travis
@@ -74,13 +74,6 @@ Tips for creating unit tests:
 We automatically run your pull request through [Travis CI](http://www.travis-ci.org)
 against SQLite, MySQL and PostgreSQL. If you break the tests, we cannot merge your code,
 so please make sure that your code is working before opening up a Pull-Request.
-
-## DoctrineBot, Tickets and Jira
-
-DoctrineBot will synchronize your Pull-Request into our [Jira](http://www.doctrine-project.org).
-Make sure to add any existing Jira ticket into the Pull-Request Title, for example:
-
-    "[DDC-123] My Pull Request"
 
 ## Getting merged
 

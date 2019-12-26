@@ -51,11 +51,15 @@ class Query
         return $plan;
     }
     
-    public function mapFind($query, $preload = null)
+    public function mapFind($query, $preload = null, $fields = null)
     {
         $modelName = $query->modelName();
         $repository = $this->databaseModel->repository($modelName);
         $databaseQuery = $repository->databaseSelectQuery();
+        if($fields !== null) {
+            $fields[] = $repository->config()->idField;
+            $databaseQuery->fields($fields);
+        }
         
         $resultStep = $this->steps->reusableResult($databaseQuery);
         $loader = $this->loaders->reusableResult($repository, $resultStep);
@@ -75,7 +79,7 @@ class Query
         if($preload !== null) {
             $preloadPlan = $plan->preloadPlan();
             $preloadMapper = $this->mappers->preload();
-            $preloadMapper->map($preloadingProxy, $modelName, $preload, $resultStep, $preloadPlan);
+            $preloadMapper->map($preloadingProxy, $modelName, $preload, $resultStep, $preloadPlan, $loader);
         }
         
         return $plan;

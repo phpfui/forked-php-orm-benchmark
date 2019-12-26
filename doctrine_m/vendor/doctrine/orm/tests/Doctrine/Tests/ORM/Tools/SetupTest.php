@@ -2,17 +2,24 @@
 
 namespace Doctrine\Tests\ORM\Tools;
 
-use Doctrine\ORM\Tools\Setup;
 use Doctrine\Common\Cache\ArrayCache;
+use Doctrine\Common\Cache\Cache;
+use Doctrine\ORM\Configuration;
+use Doctrine\ORM\Mapping\Driver\AnnotationDriver;
+use Doctrine\ORM\Mapping\Driver\XmlDriver;
+use Doctrine\ORM\Mapping\Driver\YamlDriver;
+use Doctrine\ORM\Tools\Setup;
+use Doctrine\ORM\Version;
+use Doctrine\Tests\OrmTestCase;
 
-class SetupTest extends \Doctrine\Tests\OrmTestCase
+class SetupTest extends OrmTestCase
 {
     private $originalAutoloaderCount;
     private $originalIncludePath;
 
     public function setUp()
     {
-        if (strpos(\Doctrine\ORM\Version::VERSION, "DEV") === false) {
+        if (strpos(Version::VERSION, "DEV") === false) {
             $this->markTestSkipped("Test only runs in a dev-installation from Github");
         }
 
@@ -28,7 +35,8 @@ class SetupTest extends \Doctrine\Tests\OrmTestCase
 
         set_include_path($this->originalIncludePath);
         $loaders = spl_autoload_functions();
-        for ($i = 0; $i < count($loaders); $i++) {
+        $numberOfLoaders = count($loaders);
+        for ($i = 0; $i < $numberOfLoaders; $i++) {
             if ($i > $this->originalAutoloaderCount+1) {
                 spl_autoload_unregister($loaders[$i]);
             }
@@ -44,28 +52,65 @@ class SetupTest extends \Doctrine\Tests\OrmTestCase
 
     public function testAnnotationConfiguration()
     {
-        $config = Setup::createAnnotationMetadataConfiguration(array(), true);
+        $config = Setup::createAnnotationMetadataConfiguration([], true);
 
-        $this->assertInstanceOf('Doctrine\ORM\Configuration', $config);
+        $this->assertInstanceOf(Configuration::class, $config);
         $this->assertEquals(sys_get_temp_dir(), $config->getProxyDir());
         $this->assertEquals('DoctrineProxies', $config->getProxyNamespace());
-        $this->assertInstanceOf('Doctrine\ORM\Mapping\Driver\AnnotationDriver', $config->getMetadataDriverImpl());
+        $this->assertInstanceOf(AnnotationDriver::class, $config->getMetadataDriverImpl());
     }
 
     public function testXMLConfiguration()
     {
-        $config = Setup::createXMLMetadataConfiguration(array(), true);
+        $config = Setup::createXMLMetadataConfiguration([], true);
 
-        $this->assertInstanceOf('Doctrine\ORM\Configuration', $config);
-        $this->assertInstanceOf('Doctrine\ORM\Mapping\Driver\XmlDriver', $config->getMetadataDriverImpl());
+        $this->assertInstanceOf(Configuration::class, $config);
+        $this->assertInstanceOf(XmlDriver::class, $config->getMetadataDriverImpl());
     }
 
     public function testYAMLConfiguration()
     {
-        $config = Setup::createYAMLMetadataConfiguration(array(), true);
+        $config = Setup::createYAMLMetadataConfiguration([], true);
 
-        $this->assertInstanceOf('Doctrine\ORM\Configuration', $config);
-        $this->assertInstanceOf('Doctrine\ORM\Mapping\Driver\YamlDriver', $config->getMetadataDriverImpl());
+        $this->assertInstanceOf(Configuration::class, $config);
+        $this->assertInstanceOf(YamlDriver::class, $config->getMetadataDriverImpl());
+    }
+
+    /**
+     * @group 5904
+     */
+    public function testCacheNamespaceShouldBeGeneratedWhenCacheIsNotGiven() : void
+    {
+        $config = Setup::createConfiguration(false, '/foo');
+        $cache  = $config->getMetadataCacheImpl();
+
+        self::assertSame('dc2_1effb2475fcfba4f9e8b8a1dbc8f3caf_', $cache->getNamespace());
+    }
+
+    /**
+     * @group 5904
+     */
+    public function testCacheNamespaceShouldBeGeneratedWhenCacheIsGivenButHasNoNamespace() : void
+    {
+        $config = Setup::createConfiguration(false, '/foo', new ArrayCache());
+        $cache  = $config->getMetadataCacheImpl();
+
+        self::assertSame('dc2_1effb2475fcfba4f9e8b8a1dbc8f3caf_', $cache->getNamespace());
+    }
+
+    /**
+     * @group 5904
+     */
+    public function testConfiguredCacheNamespaceShouldBeUsedAsPrefixOfGeneratedNamespace() : void
+    {
+        $originalCache = new ArrayCache();
+        $originalCache->setNamespace('foo');
+
+        $config = Setup::createConfiguration(false, '/foo', $originalCache);
+        $cache  = $config->getMetadataCacheImpl();
+
+        self::assertSame($originalCache, $cache);
+        self::assertSame('foo:dc2_1effb2475fcfba4f9e8b8a1dbc8f3caf_', $cache->getNamespace());
     }
 
     /**
@@ -73,7 +118,7 @@ class SetupTest extends \Doctrine\Tests\OrmTestCase
      */
     public function testConfigureProxyDir()
     {
-        $config = Setup::createAnnotationMetadataConfiguration(array(), true, "/foo");
+        $config = Setup::createAnnotationMetadataConfiguration([], true, "/foo");
         $this->assertEquals('/foo', $config->getProxyDir());
     }
 
@@ -83,7 +128,7 @@ class SetupTest extends \Doctrine\Tests\OrmTestCase
     public function testConfigureCache()
     {
         $cache = new ArrayCache();
-        $config = Setup::createAnnotationMetadataConfiguration(array(), true, null, $cache);
+        $config = Setup::createAnnotationMetadataConfiguration([], true, null, $cache);
 
         $this->assertSame($cache, $config->getResultCacheImpl());
         $this->assertSame($cache, $config->getMetadataCacheImpl());
@@ -95,10 +140,8 @@ class SetupTest extends \Doctrine\Tests\OrmTestCase
      */
     public function testConfigureCacheCustomInstance()
     {
-        $cache = $this->getMock('Doctrine\Common\Cache\Cache');
-        $cache->expects($this->never())->method('setNamespace');
-
-        $config = Setup::createConfiguration(array(), true, $cache);
+        $cache  = $this->createMock(Cache::class);
+        $config = Setup::createConfiguration(true, null, $cache);
 
         $this->assertSame($cache, $config->getResultCacheImpl());
         $this->assertSame($cache, $config->getMetadataCacheImpl());

@@ -36,7 +36,7 @@ use Doctrine\ORM\Utility\IdentifierFlattener;
 class DefaultEntityHydrator implements EntityHydrator
 {
     /**
-     * @var \Doctrine\ORM\EntityManager
+     * @var \Doctrine\ORM\EntityManagerInterface
      */
     private $em;
 
@@ -55,7 +55,7 @@ class DefaultEntityHydrator implements EntityHydrator
     /**
      * @var array
      */
-    private static $hints = array(Query::HINT_CACHE_ENABLED => true);
+    private static $hints = [Query::HINT_CACHE_ENABLED => true];
 
     /**
      * @param \Doctrine\ORM\EntityManagerInterface $em The entity manager.
@@ -74,6 +74,10 @@ class DefaultEntityHydrator implements EntityHydrator
     {
         $data = $this->uow->getOriginalEntityData($entity);
         $data = array_merge($data, $metadata->getIdentifierValues($entity)); // why update has no identifier values ?
+
+        if ($metadata->isVersioned) {
+            $data[$metadata->versionField] = $metadata->getFieldValue($entity, $metadata->versionField);
+        }
 
         foreach ($metadata->associationMappings as $name => $assoc) {
             if ( ! isset($data[$name])) {
@@ -138,7 +142,7 @@ class DefaultEntityHydrator implements EntityHydrator
                 $data[reset($assoc['joinColumnFieldNames'])] = $targetId;
 
                 $targetEntity = $this->em->getClassMetadata($assoc['targetEntity']);
-                $targetId     = array($targetEntity->identifier[0] => $targetId);
+                $targetId     = [$targetEntity->identifier[0] => $targetId];
             }
 
             $data[$name] = new AssociationCacheEntry($assoc['targetEntity'], $targetId);
@@ -175,7 +179,8 @@ class DefaultEntityHydrator implements EntityHydrator
                 continue;
             }
 
-            $assocKey       = new EntityCacheKey($assoc['targetEntity'], $assocId);
+            $assocMetadata  = $this->em->getClassMetadata($assoc['targetEntity']);
+            $assocKey       = new EntityCacheKey($assocMetadata->rootEntityName, $assocId);
             $assocPersister = $this->uow->getEntityPersister($assoc['targetEntity']);
             $assocRegion    = $assocPersister->getCacheRegion();
             $assocEntry     = $assocRegion->get($assocKey);

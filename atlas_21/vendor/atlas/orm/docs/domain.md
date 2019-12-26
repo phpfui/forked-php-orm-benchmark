@@ -8,28 +8,25 @@ on how to do that.
 ## Persistence Model
 
 For the examples below, we will work with an imaginary forum application that
-has conversation threads. The ThreadMapper might something like this:
+has conversation threads. The Thread mapper might something like this:
 
 ```php
-<?php
 namespace App\DataSource\Thread;
 
-use App\DataSource\Author\AuthorMapper;
-use App\DataSource\Summary\SummaryMapper;
-use App\DataSource\Reply\ReplyMapper;
-use App\DataSource\Tagging\TaggingMapper;
-use App\DataSource\Tag\TagMapper;
-use Atlas\Orm\Mapper\AbstractMapper;
+use App\DataSource\Author\Author;
+use App\DataSource\Reply\Reply;
+use App\DataSource\Summary\Summary;
+use App\DataSource\Tagging\Tagging;
+use Atlas\Mapper\Mapper;
 
-class ThreadMapper extends AbstractMapper
+class Thread extends Mapper
 {
     protected function setRelated()
     {
-        $this->manyToOne('author', AuthorMapper::CLASS);
-        $this->oneToOne('summary', SummaryMapper::CLASS);
-        $this->oneToMany('replies', ReplyMapper::CLASS);
-        $this->oneToMany('taggings', TaggingMapper::CLASS);
-        $this->manyToMany('tags', TagMapper::CLASS, 'taggings');
+        $this->manyToOne('author', Author::CLASS);
+        $this->oneToOne('summary', Summary::CLASS);
+        $this->oneToMany('replies', Reply::CLASS);
+        $this->oneToMany('taggings', Tagging::CLASS);
     }
 }
 ```
@@ -45,7 +42,6 @@ For example, the interface we want to use for a Thread Entity in domain might
 look like this:
 
 ```php
-<?php
 namespace App\Domain\Thread;
 
 interface ThreadInterface
@@ -68,16 +64,15 @@ Further, we will presume a naive domain repository implementation that returns
 Thread Entities. It might look something like this:
 
 ```php
-<?php
 namespace App\Domain\Thread;
 
-use App\DataSource\Thread\ThreadMapper;
+use App\DataSource\Thread\Thread;
 
 class ThreadRepository
 {
     protected $mapper;
 
-    public function __construct(ThreadMapper $mapper)
+    public function __construct(Thread $mapper)
     {
         $this->mapper = $mapper;
     }
@@ -87,7 +82,6 @@ class ThreadRepository
         $record = $this->mapper->fetchRecord($thread_id, [
             'author',
             'taggings',
-            'tags',
             'replies',
         ]);
 
@@ -117,10 +111,9 @@ The easiest thing to do is to implement the domain ThreadInterface in the
 persistence ThreadRecord, like so:
 
 ```php
-<?php
 namespace App\DataSource\Thread;
 
-use Atlas\Orm\Mapper\Record;
+use Atlas\Mapper\Record;
 use App\Domain\Thread\ThreadInterface;
 
 class ThreadRecord extends Record implements ThreadInterface
@@ -157,7 +150,11 @@ class ThreadRecord extends Record implements ThreadInterface
 
     public function getTags()
     {
-        return $this->tags->getArrayCopy();
+        $tags = [];
+        foreach ($this->taggings as $tagging) {
+            $tags[] = $tagging->tag->getArrayCopy();
+        }
+        return $tags;
     }
 
     public function getReplies()
@@ -172,7 +169,6 @@ need to factory anything at all. It just returns the persistence record, since
 the record now has the domain interface.
 
 ```php
-<?php
 class ThreadRepository ...
 
     protected function newThread(ThreadRecord $record)
@@ -197,7 +193,6 @@ that implements the domain interface, but encapsulates the persistence record
 as the data source. The domain object might look something like this:
 
 ```php
-<?php
 namespace App\Domain\Thread;
 
 use App\DataSource\Thread\ThreadRecord;
@@ -243,7 +238,11 @@ class Thread implements ThreadInterface
 
     public function getTags()
     {
-        return $this->record->tags->getArrayCopy();
+        $tags = [];
+        foreach ($this->record->taggings as $tagging) {
+            $tags[] = $tagging->tag->getArrayCopy();
+        }
+        return $tags;
     }
 
     public function getReplies()
@@ -258,7 +257,6 @@ but not much. All it needs is to create the Thread domain object with the
 ThreadRecord as a constructor dependency.
 
 ```php
-<?php
 class ThreadRepository ...
 
     protected function newThread(ThreadRecord $record)
@@ -285,10 +283,7 @@ the persistence record over to a "plain old PHP object" (POPO) in the domain,
 perhaps something like the following:
 
 ```php
-<?php
 namespace App\Domain\Thread;
-
-use App\DataSource\Thread\ThreadRecord;
 
 class Thread implements ThreadInterface
 {
@@ -368,11 +363,15 @@ It needs to map the individual fields in the persistence record to the domain
 object properties.
 
 ```php
-<?php
 class ThreadRepository ...
 
     protected function newThread(ThreadRecord $record)
     {
+        $tags = [];
+        foreach ($record->taggings as $tagging) {
+            $tags[] = $tagging->tag->getArrayCopy();
+        }
+
         return new Thread(
             $record->thread_id,
             $record->title,
@@ -380,7 +379,7 @@ class ThreadRepository ...
             $record->date_published,
             $record->author->author_id,
             $record->author->name,
-            $record->tags->getArrayCopy(),
+            $tags,
             $record->replies->getArrayCopy()
         );
     }

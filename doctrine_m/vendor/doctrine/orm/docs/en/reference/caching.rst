@@ -21,7 +21,7 @@ The interface defines the following public methods for you to implement:
 
 -  fetch($id) - Fetches an entry from the cache
 -  contains($id) - Test if an entry exists in the cache
--  save($id, $data, $lifeTime = false) - Puts data into the cache
+-  save($id, $data, $lifeTime = false) - Puts data into the cache for x seconds. 0 = infinite time
 -  delete($id) - Deletes a cache entry
 
 Each driver extends the ``CacheProvider`` class which defines a few
@@ -29,10 +29,10 @@ abstract protected methods that each of the drivers must
 implement:
 
 
--  \_doFetch($id)
--  \_doContains($id)
--  \_doSave($id, $data, $lifeTime = false)
--  \_doDelete($id)
+-  doFetch($id)
+-  doContains($id)
+-  doSave($id, $data, $lifeTime = false)
+-  doDelete($id)
 
 The public methods ``fetch()``, ``contains()`` etc. use the
 above protected methods which are implemented by the drivers. The
@@ -43,7 +43,7 @@ these methods.
 
 This documentation does not cover every single cache driver included
 with Doctrine. For an up-to-date-list, see the
-`cache directory on GitHub <https://github.com/doctrine/cache/tree/master/lib/Doctrine/Common/Cache>`.
+`cache directory on GitHub <https://github.com/doctrine/cache/tree/master/lib/Doctrine/Common/Cache>`_.
 
 APC
 ~~~
@@ -61,6 +61,24 @@ by itself.
 
     <?php
     $cacheDriver = new \Doctrine\Common\Cache\ApcCache();
+    $cacheDriver->save('cache_id', 'my_data');
+
+APCu
+~~~~
+
+In order to use the APCu cache driver you must have it compiled and
+enabled in your php.ini. You can read about APCu
+`in the PHP Documentation <http://us2.php.net/apcu>`_. It will give
+you a little background information about what it is and how you
+can use it as well as how to install it.
+
+Below is a simple example of how you could use the APCu cache driver
+by itself.
+
+.. code-block:: php
+
+    <?php
+    $cacheDriver = new \Doctrine\Common\Cache\ApcuCache();
     $cacheDriver->save('cache_id', 'my_data');
 
 Memcache
@@ -264,6 +282,8 @@ You can set the namespace a cache driver should use by using the
     <?php
     $cacheDriver->setNamespace('my_namespace_');
 
+.. _integrating-with-the-orm:
+
 Integrating with the ORM
 ------------------------
 
@@ -287,7 +307,7 @@ use on your ORM configuration.
 
     <?php
     $config = new \Doctrine\ORM\Configuration();
-    $config->setQueryCacheImpl(new \Doctrine\Common\Cache\ApcCache());
+    $config->setQueryCacheImpl(new \Doctrine\Common\Cache\ApcuCache());
 
 Result Cache
 ~~~~~~~~~~~~
@@ -300,7 +320,7 @@ cache implementation.
 .. code-block:: php
 
     <?php
-    $config->setResultCacheImpl(new \Doctrine\Common\Cache\ApcCache());
+    $config->setResultCacheImpl(new \Doctrine\Common\Cache\ApcuCache());
 
 Now when you're executing DQL queries you can configure them to use
 the result cache.
@@ -317,7 +337,7 @@ result cache driver.
 .. code-block:: php
 
     <?php
-    $query->setResultCacheDriver(new \Doctrine\Common\Cache\ApcCache());
+    $query->setResultCacheDriver(new \Doctrine\Common\Cache\ApcuCache());
 
 .. note::
 
@@ -369,7 +389,7 @@ first.
 .. code-block:: php
 
     <?php
-    $config->setMetadataCacheImpl(new \Doctrine\Common\Cache\ApcCache());
+    $config->setMetadataCacheImpl(new \Doctrine\Common\Cache\ApcuCache());
 
 Now the metadata information will only be parsed once and stored in
 the cache driver.

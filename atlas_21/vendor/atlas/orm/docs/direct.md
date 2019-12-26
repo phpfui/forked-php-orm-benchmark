@@ -1,250 +1,131 @@
 # Direct Queries
 
-If you need to perform queries directly, additional `fetch*` and `yield*` methods
-are provided which expose the Extended PDO functionality. By using the `$cols`
-parameter, you can select specific columns or individual values. For example:
+If you need to perform queries directly, additional `fetch*` and `yield*`
+methods are provided which expose the underlying _Atlas\Pdo\Connection_
+functionality. By using the `columns()` method, you can select specific columns
+or individual values. For example:
 
 ```php
-<?php
 // an array of IDs
 $threadIds = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['thread_id'])
+    ->select(Thread::CLASS)
+    ->columns('thread_id')
     ->limit(10)
     ->orderBy('thread_id DESC')
-    ->fetchCol();
+    ->fetchColumn();
 
 // key-value pairs of IDs and titles
 $threadIdsAndTitles = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['thread_id', 'tite'])
+    ->select(Thread::CLASS)
+    ->columns('thread_id', 'title')
     ->limit(10)
     ->orderBy('thread_id DESC')
-    ->fetchPairs();
+    ->fetchKeyPair();
 
 // etc.
 ```
 
-See [the list of `ExtendedPdo::fetch*()`][fetch] and [`yield*()`][yield]
+See the list of _Connection_ [fetch()][fetch] and [yield()][yield]
 methods for more.
 
-[fetch]: https://github.com/auraphp/Aura.Sql/tree/2.x#new-fetch-methods
-[yield]: https://github.com/auraphp/Aura.Sql/tree/2.x#new-yield-methods
+[fetch]: https://github.com/atlasphp/Atlas.Pdo/blob/1.x/docs/connection.md#fetching-results
+[yield]: https://github.com/atlasphp/Atlas.Pdo/blob/1.x/docs/connection.md#yielding-results
 
 You can also call `fetchRow()` or `fetchRows()` to get Row objects directly
 from the Table underlying the Mapper.
 
-## Fetching
-
-### Fetch Value
-
-Returns a single value, or null.
-
-```php
-<?php
-$subject = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['subject'])
-    ->where('thread_id = ?', '1')
-    ->fetchValue();
-
-// "Subject One"
-```
-
-### Fetch Column
-
-Returns a sequential array of one column, or an empty array.
-
-```php
-<?php
-$subjects = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['subject'])
-    ->limit(2)
-    ->fetchCol();
-
-// [
-//   0 => "Subject One",
-//   1 => "Subject Two"
-// ]
-```
-
-### Fetch Pairs
-
-Returns an associative array where the key is the first column and the value is
-the second column, or an empty array.
-
-```php
-<?php
-$subjectAndBody = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['subject', 'body'])
-    ->limit(2)
-    ->fetchPairs();
-
-// [
-//   'Subject One' => "Body Text One",
-//   'Subject Two' => "Body Text Two"
-// ]
-```
-
-### Fetch One
-
-Returns an associative array of one row, or null.
-
-```php
-<?php
-$threadData = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['subject', 'body', 'author_id'])
-    ->where('thread_id = 1')
-    ->fetchOne();
-
-// [
-//   'subject' => "Subject One",
-//   'body' => "Body Text One",
-//   'author_id' => "1"
-// ]
-```
-
-### Fetch Assoc
-
-Returns an associative array of rows keyed on the first column specified, or an
-empty array.
-
-```php
-<?php
-$threads = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['subject', 'body'])
-    ->limit(2)
-    ->fetchAssoc();
-
-// [
-//   'Subject One' => [
-//     'subject' => "Subject One",
-//     'body' => "Body Text One",
-//   ],
-//   'Subject Two' => [
-//     'subject' => "Subject Two",
-//     'body' => "Body Text Two"
-//   ]
-// ]
-```
-
-### Fetch All
-
-Returns a sequential array of associative arrays, or an empty array.
-
-```php
-<?php
-$threads = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['subject', 'body'])
-    ->limit(2)
-    ->orderBy('thread_id DESC')
-    ->fetchAll();
-
-// [
-//   0 => [
-//     'subject' => "Subject One",
-//     'body' => "Body Text One"
-//   ],
-//   1 => [
-//     'subject' => "Subject Two",
-//     'body' => "Body Text Two"
-//   ]
-// ]
-```
-
-## Yielding Data
-
-If you prefer to get the results one at a time, you can use the `yield*`
-variations on these methods to iterate through the result set instead of
-returning an array.
-
-### Yield Col
-
-Iterate through a sequential array of one column.
-
-```php
-<?php
-$subjects = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['subject'])
-    ->yieldCol();
-
-foreach($subjects as $subject) {
-    echo $subject;
-}
-```
-
-### Yield Pairs
-
-Iterate through an associative array by the first column specified.
-
-```php
-<?php
-$subjectAndBody = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['subject', 'body'])
-    ->yieldPairs();
-
-foreach($subjectAndBody as $subject => $body) {
-    echo $subject . ": " . $body;
-}
-```
-
-### Yield Assoc
-
-Iterate through an associative array of rows by the first column specified.
-
-```php
-<?php
-$threads = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['thread_id', 'subject'])
-    ->yieldAssoc();
-
-foreach($threads as $threadId => $thread) {
-    echo $threadId . ": " . $thread['subject'];
-}
-```
-
-### Yield All
-
-Iterate through a sequential array of rows.
-
-```php
-<?php
-$threads = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['thread_id', 'subject'])
-    ->yieldAll();
-
- foreach($threads as $thread) {
-    echo $thread['thread_id'] . ": " . $thread['subject'];
-}
-```
 
 ## Complex Queries
 
 You can use any of the direct table access methods with more complex queries and
-joins.
+joins as provided by [Atlas.Query][]:
 
 ```php
-<?php
 $threadData = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['threads.subject', 'authors.name', 's.*'])
+    ->select(Thread::CLASS)
+    ->columns('threads.subject', 'authors.name', 's.*')
     ->join('INNER', 'authors', 'authors.author_id = threads.author_id')
-    ->join('INNER', 'summary s', 's.thread_id = threads.thread_id')
-    ->where('authors.name = ?', $name)
+    ->join('INNER', 'summary AS s', 's.thread_id = threads.thread_id')
+    ->where('authors.name = ', $name)
     ->orderBy('threads.thread_id DESC')
     ->offset(2)
     ->limit(2)
-    ->fetchAssoc();
+    ->fetchUnique();
 ```
+
+[Atlas.Query]: https://github.com/atlasphp/Atlas.Query/blob/1.x/docs/select.md
+
+## Joining On Defined Relationships
+
+In addition the various `JOIN` methods provided by Atlas.Query, the
+_MapperSelect_ also provides `joinWith()`, so that you can join on a defined
+relationship and then use columns from that relationship. (The related table
+will be aliased automatically as the relationship name.)
+
+For example, to `JOIN` with another table as defined in the Mapper
+relationships:
+
+```php
+$threadIdsAndAuthorNames = $atlas
+    ->select(Thread::CLASS)
+    ->joinWith('author')
+    ->columns(
+        "threads.thread_id",
+        "CONCAT(author.first_name, ' ', author.last_name)"
+    )
+    ->limit(10)
+    ->orderBy('thread_id DESC')
+    ->fetchKeyPair();
+```
+
+You can specify the JOIN type as part of the related name string, in addition
+to an alias of your choosing:
+
+```php
+// specify the join type:
+$select->joinWith('LEFT author');
+
+// specify an alternative alias:
+$select->joinWith('author AS author_alias');
+
+// specify both
+$select->joinWith('LEFT author AS author_alias');
+```
+
+Finally, you can pass a callable as an optional third parameter to add "sub"
+JOINs on the already-joined relationship. For example, to find all authors
+with threads that have the "foo" tag on them:
+
+```php
+$authorsWithThreadsAndTags = $atlas
+    ->select(Author::CLASS)
+    ->joinWith('threads', function ($sub) {
+        $sub->joinWith('taggings', function ($sub) {
+            $sub->joinWith('tag');
+        });
+    })
+    ->where('tag = ', 'foo');
+```
+
+This builds a query similar to the following:
+
+```sql
+SELECT
+    *
+FROM
+    authors
+        JOIN threads ON authors.author_id = threads.author_id
+        JOIN taggings ON threads.thread_id = taggings.thread_id
+        JOIN tags AS tag ON taggings.tag_id = tag.tag_id
+WHERE tag = :__1__
+```
+
+> **Note:**
+>
+> Using `joinWith()` **does not** select any records from the defined
+> relationship; it only adds a JOIN clause. If you want to select related
+> records, use the `with()` method.
+
 
 ## Reusing the Select
 
@@ -253,10 +134,9 @@ pagination.  The generated select statement can also be displayed for debugging
 purposes.
 
 ```php
-<?php
 $select = $atlas
-    ->select(ThreadMapper::CLASS)
-    ->cols(['*'])
+    ->select(Thread::CLASS)
+    ->columns('*')
     ->offset(10)
     ->limit(5);
 

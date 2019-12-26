@@ -2,9 +2,10 @@
 
 namespace Illuminate\Database\Eloquent\Relations;
 
-use Illuminate\Database\Eloquent\Model;
+use BadMethodCallException;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 
 class MorphTo extends BelongsTo
 {
@@ -29,12 +30,19 @@ class MorphTo extends BelongsTo
      */
     protected $dictionary = [];
 
-    /*
-     * Indicates if soft-deleted model instances should be fetched.
+    /**
+     * A buffer of dynamic calls to query macros.
      *
-     * @var bool
+     * @var array
      */
-    protected $withTrashed = false;
+    protected $macroBuffer = [];
+
+    /**
+     * A map of relations to load for each individual morph type.
+     *
+     * @var array
+     */
+    protected $morphableEagerLoads = [];
 
     /**
      * Create a new morph to relationship instance.
@@ -42,30 +50,16 @@ class MorphTo extends BelongsTo
      * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @param  \Illuminate\Database\Eloquent\Model  $parent
      * @param  string  $foreignKey
-     * @param  string  $otherKey
+     * @param  string  $ownerKey
      * @param  string  $type
      * @param  string  $relation
      * @return void
      */
-    public function __construct(Builder $query, Model $parent, $foreignKey, $otherKey, $type, $relation)
+    public function __construct(Builder $query, Model $parent, $foreignKey, $ownerKey, $type, $relation)
     {
         $this->morphType = $type;
 
-        parent::__construct($query, $parent, $foreignKey, $otherKey, $relation);
-    }
-
-    /**
-     * Get the results of the relationship.
-     *
-     * @return mixed
-     */
-    public function getResults()
-    {
-        if (! $this->otherKey) {
-            return;
-        }
-
-        return $this->query->first();
+        parent::__construct($query, $parent, $foreignKey, $ownerKey, $relation);
     }
 
     /**
@@ -95,6 +89,72 @@ class MorphTo extends BelongsTo
     }
 
     /**
+     * Get the results of the relationship.
+     *
+     * Called via eager load method of Eloquent query builder.
+     *
+     * @return mixed
+     */
+    public function getEager()
+    {
+        foreach (array_keys($this->dictionary) as $type) {
+            $this->matchToMorphParents($type, $this->getResultsByType($type));
+        }
+
+        return $this->models;
+    }
+
+    /**
+     * Get all of the relation results for a type.
+     *
+     * @param  string  $type
+     * @return \Illuminate\Database\Eloquent\Collection
+     */
+    protected function getResultsByType($type)
+    {
+        $instance = $this->createModelByType($type);
+
+        $ownerKey = $this->ownerKey ?? $instance->getKeyName();
+
+        $query = $this->replayMacros($instance->newQuery())
+                            ->mergeConstraintsFrom($this->getQuery())
+                            ->with(array_merge(
+                                $this->getQuery()->getEagerLoads(),
+                                (array) ($this->morphableEagerLoads[get_class($instance)] ?? [])
+                            ));
+
+        $whereIn = $this->whereInMethod($instance, $ownerKey);
+
+        return $query->{$whereIn}(
+            $instance->getTable().'.'.$ownerKey, $this->gatherKeysByType($type)
+        )->get();
+    }
+
+    /**
+     * Gather all of the foreign keys for a given type.
+     *
+     * @param  string  $type
+     * @return array
+     */
+    protected function gatherKeysByType($type)
+    {
+        return array_keys($this->dictionary[$type]);
+    }
+
+    /**
+     * Create a new model instance by type.
+     *
+     * @param  string  $type
+     * @return \Illuminate\Database\Eloquent\Model
+     */
+    public function createModelByType($type)
+    {
+        $class = Model::getActualClassNameForMorph($type);
+
+        return new $class;
+    }
+
+    /**
      * Match the eagerly loaded results to their parents.
      *
      * @param  array   $models
@@ -104,11 +164,27 @@ class MorphTo extends BelongsTo
      */
     public function match(array $models, Collection $results, $relation)
     {
-        foreach (array_keys($this->dictionary) as $type) {
-            $this->matchToMorphParents($type, $this->getResultsByType($type), $relation);
-        }
-
         return $models;
+    }
+
+    /**
+     * Match the results for a given type to their parents.
+     *
+     * @param  string  $type
+     * @param  \Illuminate\Database\Eloquent\Collection  $results
+     * @return void
+     */
+    protected function matchToMorphParents($type, Collection $results)
+    {
+        foreach ($results as $result) {
+            $ownerKey = ! is_null($this->ownerKey) ? $result->{$this->ownerKey} : $result->getKey();
+
+            if (isset($this->dictionary[$type][$ownerKey])) {
+                foreach ($this->dictionary[$type][$ownerKey] as $model) {
+                    $model->setRelation($this->relationName, $result);
+                }
+            }
+        }
     }
 
     /**
@@ -119,11 +195,15 @@ class MorphTo extends BelongsTo
      */
     public function associate($model)
     {
-        $this->parent->setAttribute($this->foreignKey, $model->getKey());
+        $this->parent->setAttribute(
+            $this->foreignKey, $model instanceof Model ? $model->getKey() : null
+        );
 
-        $this->parent->setAttribute($this->morphType, $model->getMorphClass());
+        $this->parent->setAttribute(
+            $this->morphType, $model instanceof Model ? $model->getMorphClass() : null
+        );
 
-        return $this->parent->setRelation($this->relation, $model);
+        return $this->parent->setRelation($this->relationName, $model);
     }
 
     /**
@@ -137,73 +217,30 @@ class MorphTo extends BelongsTo
 
         $this->parent->setAttribute($this->morphType, null);
 
-        return $this->parent->setRelation($this->relation, null);
+        return $this->parent->setRelation($this->relationName, null);
     }
 
     /**
-     * Match the results for a given type to their parents.
+     * Touch all of the related models for the relationship.
      *
-     * @param  string $type
-     * @param  \Illuminate\Database\Eloquent\Collection $results
-     * @param string $relation
+     * @return void
      */
-    protected function matchToMorphParents($type, Collection $results, $relation)
+    public function touch()
     {
-        foreach ($results as $result) {
-            if (isset($this->dictionary[$type][$result->getKey()])) {
-                foreach ($this->dictionary[$type][$result->getKey()] as $model) {
-                    $model->setRelation($relation, $result);
-                }
-            }
+        if (! is_null($this->child->{$this->foreignKey})) {
+            parent::touch();
         }
     }
 
     /**
-     * Get all of the relation results for a type.
+     * Make a new related instance for the given model.
      *
-     * @param  string  $type
-     * @return \Illuminate\Database\Eloquent\Collection
-     */
-    protected function getResultsByType($type)
-    {
-        $instance = $this->createModelByType($type);
-
-        $key = $instance->getTable().'.'.$instance->getKeyName();
-
-        $query = $instance->newQuery();
-
-        $query = $this->useWithTrashed($query);
-
-        return $query->whereIn($key, $this->gatherKeysByType($type)->all())->get();
-    }
-
-    /**
-     * Gather all of the foreign keys for a given type.
-     *
-     * @param  string  $type
-     * @return array
-     */
-    protected function gatherKeysByType($type)
-    {
-        $foreign = $this->foreignKey;
-
-        return collect($this->dictionary[$type])->map(function ($models) use ($foreign) {
-            return head($models)->{$foreign};
-
-        })->values()->unique();
-    }
-
-    /**
-     * Create a new model instance by type.
-     *
-     * @param  string  $type
+     * @param  \Illuminate\Database\Eloquent\Model  $parent
      * @return \Illuminate\Database\Eloquent\Model
      */
-    public function createModelByType($type)
+    protected function newRelatedInstanceFor(Model $parent)
     {
-        $class = $this->parent->getActualClassNameForMorph($type);
-
-        return new $class;
+        return $parent->{$this->getRelationName()}()->getRelated()->newInstance();
     }
 
     /**
@@ -227,31 +264,61 @@ class MorphTo extends BelongsTo
     }
 
     /**
-     * Fetch soft-deleted model instances with query.
+     * Specify which relations to load for a given morph type.
      *
-     * @return $this
+     * @param  array  $with
+     * @return \Illuminate\Database\Eloquent\Relations\MorphTo
      */
-    public function withTrashed()
+    public function morphWith(array $with)
     {
-        $this->withTrashed = true;
-
-        $this->query = $this->useWithTrashed($this->query);
+        $this->morphableEagerLoads = array_merge(
+            $this->morphableEagerLoads, $with
+        );
 
         return $this;
     }
 
     /**
-     * Return trashed models with query if told so.
+     * Replay stored macro calls on the actual related instance.
      *
      * @param  \Illuminate\Database\Eloquent\Builder  $query
      * @return \Illuminate\Database\Eloquent\Builder
      */
-    protected function useWithTrashed(Builder $query)
+    protected function replayMacros(Builder $query)
     {
-        if ($this->withTrashed && $query->getMacro('withTrashed') !== null) {
-            return $query->withTrashed();
+        foreach ($this->macroBuffer as $macro) {
+            $query->{$macro['method']}(...$macro['parameters']);
         }
 
         return $query;
+    }
+
+    /**
+     * Handle dynamic method calls to the relationship.
+     *
+     * @param  string  $method
+     * @param  array   $parameters
+     * @return mixed
+     */
+    public function __call($method, $parameters)
+    {
+        try {
+            $result = parent::__call($method, $parameters);
+
+            if (in_array($method, ['select', 'selectRaw', 'selectSub', 'addSelect', 'withoutGlobalScopes'])) {
+                $this->macroBuffer[] = compact('method', 'parameters');
+            }
+
+            return $result;
+        }
+
+        // If we tried to call a method that does not exist on the parent Builder instance,
+        // we'll assume that we want to call a query macro (e.g. withTrashed) that only
+        // exists on related models. We will just store the call and replay it later.
+        catch (BadMethodCallException $e) {
+            $this->macroBuffer[] = compact('method', 'parameters');
+
+            return $this;
+        }
     }
 }

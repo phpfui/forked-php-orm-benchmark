@@ -131,7 +131,7 @@ class Handler extends \PHPixie\ORM\Relationships\Relationship\Implementation\Han
         );
     }
 
-    public function mapPreload($side, $preloadProperty, $result, $plan)
+    public function mapPreload($side, $preloadProperty, $result, $plan, $relatedLoader)
     {
 
         $dependencies   = $this->getMappingDependencies($side);
@@ -161,7 +161,14 @@ class Handler extends \PHPixie\ORM\Relationships\Relationship\Implementation\Han
                             $config->get($dependencies['type'].'PivotKey'),
                             $plan
                         );
-
+        $preload = $preloadProperty->preload();
+        $options = $preloadProperty->options();
+        
+        if(isset($options['queryCallback'])) {
+            $callback = $options['queryCallback'];
+            $callback($sideQuery);
+        }
+        
         $preloadStep = $this->steps->reusableResult($sideQuery);
         $plan->add($preloadStep);
         $loader = $this->loaders->reusableResult($sideRepository, $preloadStep);
@@ -172,9 +179,10 @@ class Handler extends \PHPixie\ORM\Relationships\Relationship\Implementation\Han
         $this->mappers->preload()->map(
             $preloadingProxy,
             $sideRepository->modelName(),
-            $preloadProperty->preload(),
+            $preload,
             $preloadStep,
-            $plan
+            $plan,
+            $cachingProxy
         );
 
         return $this->relationship->preloader($side, $sideRepository->config(), $preloadStep, 

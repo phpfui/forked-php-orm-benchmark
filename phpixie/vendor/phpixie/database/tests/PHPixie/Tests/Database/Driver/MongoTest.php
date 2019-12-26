@@ -1,7 +1,7 @@
 <?php
 namespace PHPixie\Tests\Database\Driver;
 
-if(!class_exists('\MongoClient'))
+if(!class_exists('\MongoDB\Client'))
     require_once(__DIR__.'/Mongo/ConnectionTestFiles/MongoClient.php');
 
 /**
@@ -17,17 +17,12 @@ class MongoTest extends \PHPixie\Tests\Database\DriverTest
     public function setUp()
     {
         parent::setUp();
-        $this->connectionStub = $this->getMock('\PHPixie\Database\Driver\Mongo\Connection', array('config'), array(), '', null, false);
+        $this->connectionStub = $this->quickMock('\PHPixie\Database\Driver\Mongo\Connection', array('config'));
         $this->database
                 ->expects($this->any())
                 ->method('get')
                 ->with()
                 ->will($this->returnValue($this->connectionStub));
-        $this->database
-                ->expects($this->any())
-                ->method('parser')
-                ->with('connectionName')
-                ->will($this->returnValue('parser'));
 
         $this->connectionStub
                             ->expects($this->any())
@@ -124,9 +119,10 @@ class MongoTest extends \PHPixie\Tests\Database\DriverTest
      */
     public function testResult()
     {
-        $result = $this->driver->result('cursor');
+        $cursor = new \ArrayIterator(array());
+        $result = $this->driver->result($cursor);
         $this->assertInstanceOf('PHPixie\Database\Driver\Mongo\Result', $result);
-        $this->assertAttributeEquals('cursor', 'cursor', $result);
+        $this->assertAttributeEquals($cursor, 'cursor', $result);
     }
 
     /**
