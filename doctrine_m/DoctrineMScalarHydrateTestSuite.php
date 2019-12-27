@@ -9,7 +9,7 @@ class DoctrineMScalarHydrateTestSuite extends DoctrineMWithCacheTestSuite
         $books = $this->em->createQuery(
             'SELECT b FROM Book b WHERE b.price > ?1'
         )->setParameter(1, $i)
-         ->setMaxResults(5)
+         ->setMaxResults(50)
          ->getScalarResult();
 
         foreach ($books as $book) {

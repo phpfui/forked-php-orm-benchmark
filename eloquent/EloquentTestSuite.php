@@ -84,7 +84,7 @@ class EloquentTestSuite extends AbstractTestSuite
 
 	function runHydrate($i)
 	{
-		$books = Book::where('price', '>', $i)->limit(5)->get();
+		$books = Book::where('price', '>', $i)->limit(50)->get();
 		foreach ($books as $book) {
 		}
 	}

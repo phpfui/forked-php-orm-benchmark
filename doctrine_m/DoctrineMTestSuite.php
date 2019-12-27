@@ -93,7 +93,7 @@ class DoctrineMTestSuite extends AbstractTestSuite
         $books = $this->em->createQuery(
             'SELECT b FROM Book b WHERE b.price > ?1'
         )->setParameter(1, $i)
-         ->setMaxResults(5)
+         ->setMaxResults(50)
          ->getResult();
 
         foreach ($books as $book) {

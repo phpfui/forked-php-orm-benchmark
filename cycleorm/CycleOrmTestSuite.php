@@ -158,12 +158,12 @@ class CycleOrmTestSuite extends AbstractTestSuite
 
     function runPKSearch($i)
     {
-        $this->orm->getRepository(Author::class)->findOne(['id' => array_rand($this->authors)]);
+        $this->orm->getRepository(Author::class)->findByPK(array_rand($this->authors));
     }
 
     function runHydrate($i)
     {
-        $books = $this->orm->getRepository(Book::class)->select()->where('price', '>', $i)->limit(5)->fetchAll();
+        $books = $this->orm->getRepository(Book::class)->select()->where('price', '>', $i)->limit(50)->fetchAll();
         foreach ($books as $book) {
         }
     }
@@ -181,15 +181,4 @@ class CycleOrmTestSuite extends AbstractTestSuite
         $this->orm->getRepository(Book::class)->select()->where('title', 'Hello' . $i)->load('author')->fetchOne();
     }
 
-
-    public function run()
-    {
-        $t1 = $this->runTest('runAuthorInsertion', 2000);
-        $t1 += $this->runTest('runBookInsertion', 2000);
-        $t2 = $this->runTest('runPKSearch', 500);
-        $t3 = $this->runTest('runComplexQuery', 1000);
-        $t4 = $this->runTest('runHydrate', 1000);
-        $t5 = $this->runTest('runJoinSearch', 1000);
-        echo sprintf("| %32s | %6d | %6d | %6d | %6d | %6d | ", str_replace('TestSuite', '', get_class($this)), $t1, $t2, $t3, $t4, $t5);
-    }
 }

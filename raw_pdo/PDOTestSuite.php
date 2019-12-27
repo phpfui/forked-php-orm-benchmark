@@ -60,7 +60,7 @@ class PDOTestSuite extends AbstractTestSuite
 	
 	function runHydrate($i)
 	{
-		$query = 'SELECT book.ID, book.TITLE, book.ISBN, book.PRICE, book.AUTHOR_ID FROM book WHERE book.PRICE > ? LIMIT 5';
+		$query = 'SELECT book.ID, book.TITLE, book.ISBN, book.PRICE, book.AUTHOR_ID FROM book WHERE book.PRICE > ? LIMIT 50';
 		$stmt = $this->con->prepare($query);
 		$stmt->bindParam(1, $i, PDO::PARAM_INT);
 		$stmt->execute();

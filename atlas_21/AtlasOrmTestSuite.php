@@ -78,7 +78,7 @@ class AtlasOrmTestSuite extends AbstractTestSuite
         $stmt = $this->atlas
             ->select(\Book\Book::class)
             ->where('price > ', $i)
-            ->limit(5);
+            ->limit(50);
 
         foreach ($stmt->fetchRecordSet() as $book) {
         }

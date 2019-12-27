@@ -95,7 +95,7 @@ class PHPixieTestSuite extends AbstractTestSuite
 
     function runHydrate($i)
     {
-        $books = $this->orm->query('book')->where('price', '>', $i)->limit(5)->find();
+        $books = $this->orm->query('book')->where('price', '>', $i)->limit(50)->find();
         foreach ($books as $book) {
         }
     }
