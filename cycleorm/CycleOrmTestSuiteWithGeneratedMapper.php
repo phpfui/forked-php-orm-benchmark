@@ -23,7 +23,7 @@ class CycleOrmTestSuiteWithGeneratedMapper extends AbstractTestSuite
                 'connections' => [
                     'memory' => [
                         'driver'     => Database\Driver\SQLite\SQLiteDriver::class,
-                        'connection' => 'sqlite:memory',
+                        'connection' => 'sqlite::memory:',
                         'username'   => '',
                         'password'   => '',
                     ]

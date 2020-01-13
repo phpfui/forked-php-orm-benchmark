@@ -22,7 +22,7 @@ class AtlasOrmTestSuite extends AbstractTestSuite
         $loader = require_once "vendor/autoload.php";
         $loader->add('', __DIR__ . '/src');
 
-        $this->con = Connection::new('sqlite:memory');
+        $this->con = Connection::new('sqlite::memory:');
 
         $this->atlas = Atlas::new(
             $this->con
