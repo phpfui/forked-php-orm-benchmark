@@ -23,6 +23,7 @@ class ComposerStaticInitf73c3c1899b4f44cf203a48416c0b563
         array (
             'Psr\\Log\\' => 8,
             'Psr\\Container\\' => 14,
+            'PhpParser\\' => 10,
         ),
         'D' => 
         array (
@@ -33,6 +34,7 @@ class ComposerStaticInitf73c3c1899b4f44cf203a48416c0b563
         'C' => 
         array (
             'Cycle\\ORM\\' => 10,
+            'CodeGenerationUtils\\' => 20,
         ),
     );
 
@@ -69,6 +71,10 @@ class ComposerStaticInitf73c3c1899b4f44cf203a48416c0b563
         array (
             0 => __DIR__ . '/..' . '/psr/container/src',
         ),
+        'PhpParser\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
+        ),
         'Doctrine\\Instantiator\\' => 
         array (
             0 => __DIR__ . '/..' . '/doctrine/instantiator/src/Doctrine/Instantiator',
@@ -85,6 +91,20 @@ class ComposerStaticInitf73c3c1899b4f44cf203a48416c0b563
         array (
             0 => __DIR__ . '/..' . '/cycle/orm/src',
         ),
+        'CodeGenerationUtils\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/ocramius/code-generator-utils/src/CodeGenerationUtils',
+        ),
+    );
+
+    public static $prefixesPsr0 = array (
+        'G' => 
+        array (
+            'GeneratedHydrator\\' => 
+            array (
+                0 => __DIR__ . '/..' . '/ocramius/generated-hydrator/src',
+            ),
+        ),
     );
 
     public static function getInitializer(ClassLoader $loader)
@@ -92,6 +112,7 @@ class ComposerStaticInitf73c3c1899b4f44cf203a48416c0b563
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInitf73c3c1899b4f44cf203a48416c0b563::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInitf73c3c1899b4f44cf203a48416c0b563::$prefixDirsPsr4;
+            $loader->prefixesPsr0 = ComposerStaticInitf73c3c1899b4f44cf203a48416c0b563::$prefixesPsr0;
 
         }, null, ClassLoader::class);
     }

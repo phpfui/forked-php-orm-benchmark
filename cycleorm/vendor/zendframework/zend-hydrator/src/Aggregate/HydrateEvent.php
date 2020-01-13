@@ -1,11 +1,11 @@
 <?php
 /**
- * @see       https://github.com/zendframework/zend-hydrator for the canonical source repository
- * @copyright Copyright (c) 2010-2018 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   https://github.com/zendframework/zend-hydrator/blob/master/LICENSE.md New BSD License
+ * Zend Framework (http://framework.zend.com/)
+ *
+ * @link      http://github.com/zendframework/zf2 for the canonical source repository
+ * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
-
-declare(strict_types=1);
 
 namespace Zend\Hydrator\Aggregate;
 
@@ -17,7 +17,7 @@ use Zend\EventManager\Event;
  */
 class HydrateEvent extends Event
 {
-    public const EVENT_HYDRATE = 'hydrate';
+    const EVENT_HYDRATE = 'hydrate';
 
     /**
      * {@inheritDoc}
@@ -30,16 +30,17 @@ class HydrateEvent extends Event
     protected $hydratedObject;
 
     /**
-     * @var mixed[] Data being used to hydrate the $hydratedObject
+     * @var array
      */
     protected $hydrationData;
 
     /**
-     * @param mixed[] $hydrationData Data being used to hydrate the $hydratedObject
+     * @param object $target
+     * @param object $hydratedObject
+     * @param array  $hydrationData
      */
-    public function __construct(object $target, object $hydratedObject, array $hydrationData)
+    public function __construct($target, $hydratedObject, array $hydrationData)
     {
-        parent::__construct();
         $this->target         = $target;
         $this->hydratedObject = $hydratedObject;
         $this->hydrationData  = $hydrationData;
@@ -47,13 +48,18 @@ class HydrateEvent extends Event
 
     /**
      * Retrieves the object that is being hydrated
+     *
+     * @return object
      */
-    public function getHydratedObject() : object
+    public function getHydratedObject()
     {
         return $this->hydratedObject;
     }
 
-    public function setHydratedObject(object $hydratedObject) : void
+    /**
+     * @param object $hydratedObject
+     */
+    public function setHydratedObject($hydratedObject)
     {
         $this->hydratedObject = $hydratedObject;
     }
@@ -61,17 +67,17 @@ class HydrateEvent extends Event
     /**
      * Retrieves the data that is being used for hydration
      *
-     * @return mixed[]
+     * @return array
      */
-    public function getHydrationData() : array
+    public function getHydrationData()
     {
         return $this->hydrationData;
     }
 
     /**
-     * @param mixed[] $hydrationData
+     * @param array $hydrationData
      */
-    public function setHydrationData(array $hydrationData) : void
+    public function setHydrationData(array $hydrationData)
     {
         $this->hydrationData = $hydrationData;
     }

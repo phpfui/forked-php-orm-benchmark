@@ -1,10 +1,4 @@
 <?php
 
-require dirname(__FILE__) . '/CycleOrmTestSuite.php';
-
-$time = microtime(true);
-$memory = memory_get_usage();
-$test = new CycleOrmTestSuite();
-$test->initialize();
-$test->run();
-echo sprintf(" %11s | %6.2f |\n", number_format(memory_get_usage(true) - $memory), (microtime(true) - $time));
+passthru('php '.dirname(__FILE__).'/TestRunnerDefault.php');
+passthru('php '.dirname(__FILE__).'/TestRunnerGeneratedMapper.php');

@@ -1,23 +1,13 @@
 <?php
 /**
- * @see       https://github.com/zendframework/zend-hydrator for the canonical source repository
- * @copyright Copyright (c) 2010-2018 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   https://github.com/zendframework/zend-hydrator/blob/master/LICENSE.md New BSD License
+ * Zend Framework (http://framework.zend.com/)
+ *
+ * @link      http://github.com/zendframework/zf2 for the canonical source repository
+ * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
-declare(strict_types=1);
-
 namespace Zend\Hydrator\Strategy;
-
-use function explode;
-use function get_class;
-use function gettype;
-use function implode;
-use function is_array;
-use function is_numeric;
-use function is_object;
-use function is_string;
-use function sprintf;
 
 final class ExplodeStrategy implements StrategyInterface
 {
@@ -37,17 +27,29 @@ final class ExplodeStrategy implements StrategyInterface
      * @param string   $delimiter    String that the values will be split upon
      * @param int|null $explodeLimit Explode limit
      */
-    public function __construct(string $delimiter = ',', ?int $explodeLimit = null)
+    public function __construct($delimiter = ',', $explodeLimit = null)
     {
         $this->setValueDelimiter($delimiter);
-        $this->explodeLimit = $explodeLimit;
+
+        $this->explodeLimit = ($explodeLimit === null) ? null : (int) $explodeLimit;
     }
 
     /**
      * Sets the delimiter string that the values will be split upon
+     *
+     * @param  string $delimiter
+     * @return self
      */
-    private function setValueDelimiter(string $delimiter) : void
+    private function setValueDelimiter($delimiter)
     {
+        if (! is_string($delimiter)) {
+            throw new Exception\InvalidArgumentException(sprintf(
+                '%s expects Delimiter to be string, %s provided instead',
+                __METHOD__,
+                is_object($delimiter) ? get_class($delimiter) : gettype($delimiter)
+            ));
+        }
+
         if (empty($delimiter)) {
             throw new Exception\InvalidArgumentException('Delimiter cannot be empty.');
         }
@@ -61,10 +63,12 @@ final class ExplodeStrategy implements StrategyInterface
      * Split a string by delimiter
      *
      * @param string|null $value
+     *
      * @return string[]
+     *
      * @throws Exception\InvalidArgumentException
      */
-    public function hydrate($value, ?array $data = null)
+    public function hydrate($value)
     {
         if (null === $value) {
             return [];
@@ -79,10 +83,10 @@ final class ExplodeStrategy implements StrategyInterface
         }
 
         if ($this->explodeLimit !== null) {
-            return explode($this->valueDelimiter, (string) $value, $this->explodeLimit);
+            return explode($this->valueDelimiter, $value, $this->explodeLimit);
         }
 
-        return explode($this->valueDelimiter, (string) $value);
+        return explode($this->valueDelimiter, $value);
     }
 
     /**
@@ -91,10 +95,10 @@ final class ExplodeStrategy implements StrategyInterface
      * Join array elements with delimiter
      *
      * @param string[] $value The original value.
+     *
      * @return string|null
-     * @throws Exception\InvalidArgumentException for non-array $value values
      */
-    public function extract($value, ?object $object = null)
+    public function extract($value)
     {
         if (! is_array($value)) {
             throw new Exception\InvalidArgumentException(sprintf(

@@ -1,60 +1,80 @@
 <?php
 /**
- * @see       https://github.com/zendframework/zend-hydrator for the canonical source repository
- * @copyright Copyright (c) 2010-2018 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   https://github.com/zendframework/zend-hydrator/blob/master/LICENSE.md New BSD License
+ * Zend Framework (http://framework.zend.com/)
+ *
+ * @link      http://github.com/zendframework/zf2 for the canonical source repository
+ * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
-
-declare(strict_types=1);
 
 namespace Zend\Hydrator\NamingStrategy;
 
-use Zend\Hydrator\NamingStrategy\UnderscoreNamingStrategy\CamelCaseToUnderscoreFilter;
-use Zend\Hydrator\NamingStrategy\UnderscoreNamingStrategy\UnderscoreToCamelCaseFilter;
+use Zend\Filter\FilterChain;
 
 class UnderscoreNamingStrategy implements NamingStrategyInterface
 {
     /**
-     * @var CamelCaseToUnderscoreFilter|null
+     * @var FilterChain|null
      */
-    private static $camelCaseToUnderscoreFilter;
+    protected static $camelCaseToUnderscoreFilter;
 
     /**
-     * @var UnderscoreToCamelCaseFilter|null
+     * @var FilterChain|null
      */
-    private static $underscoreToCamelCaseFilter;
+    protected static $underscoreToStudlyCaseFilter;
 
     /**
      * Remove underscores and capitalize letters
+     *
+     * @param  string $name
+     * @return string
      */
-    public function hydrate(string $name, ?array $data = null) : string
+    public function hydrate($name)
     {
-        return $this->getUnderscoreToCamelCaseFilter()->filter($name);
+        return $this->getUnderscoreToStudlyCaseFilter()->filter($name);
     }
 
     /**
      * Remove capitalized letters and prepend underscores.
+     *
+     * @param  string $name
+     * @return string
      */
-    public function extract(string $name, ?object $object = null) : string
+    public function extract($name)
     {
         return $this->getCamelCaseToUnderscoreFilter()->filter($name);
     }
 
-    private function getUnderscoreToCamelCaseFilter() : UnderscoreToCamelCaseFilter
+    /**
+     * @return FilterChain
+     */
+    protected function getUnderscoreToStudlyCaseFilter()
     {
-        if (! static::$underscoreToCamelCaseFilter) {
-            static::$underscoreToCamelCaseFilter = new UnderscoreToCamelCaseFilter();
+        if (static::$underscoreToStudlyCaseFilter instanceof FilterChain) {
+            return static::$underscoreToStudlyCaseFilter;
         }
 
-        return static::$underscoreToCamelCaseFilter;
+        $filter = new FilterChain();
+
+        $filter->attachByName('WordUnderscoreToStudlyCase');
+
+        return static::$underscoreToStudlyCaseFilter = $filter;
     }
 
-    private function getCamelCaseToUnderscoreFilter() : CamelCaseToUnderscoreFilter
+    /**
+     * @return FilterChain
+     */
+    protected function getCamelCaseToUnderscoreFilter()
     {
-        if (! static::$camelCaseToUnderscoreFilter) {
-            static::$camelCaseToUnderscoreFilter = new CamelCaseToUnderscoreFilter();
+        if (static::$camelCaseToUnderscoreFilter instanceof FilterChain) {
+            return static::$camelCaseToUnderscoreFilter;
         }
 
-        return static::$camelCaseToUnderscoreFilter;
+        $filter = new FilterChain();
+
+        $filter->attachByName('WordCamelCaseToUnderscore');
+        $filter->attachByName('StringToLower');
+
+        return static::$camelCaseToUnderscoreFilter = $filter;
     }
 }

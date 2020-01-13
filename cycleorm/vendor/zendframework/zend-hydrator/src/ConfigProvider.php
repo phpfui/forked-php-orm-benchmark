@@ -1,26 +1,20 @@
 <?php
 /**
- * @see       https://github.com/zendframework/zend-hydrator for the canonical source repository
- * @copyright Copyright (c) 2016-2018 Zend Technologies USA Inc. (https://www.zend.com)
- * @license   https://github.com/zendframework/zend-hydrator/blob/master/LICENSE.md New BSD License
+ * @link      http://github.com/zendframework/zend-hydrator for the canonical source repository
+ * @copyright Copyright (c) 2005-2016 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
 
-declare(strict_types=1);
-
 namespace Zend\Hydrator;
-
-use Zend\ServiceManager\ServiceManager;
-
-use function class_exists;
 
 class ConfigProvider
 {
     /**
      * Return configuration for this component.
      *
-     * @return mixed[]
+     * @return array
      */
-    public function __invoke() : array
+    public function __invoke()
     {
         return [
             'dependencies' => $this->getDependencyConfig(),
@@ -30,25 +24,16 @@ class ConfigProvider
     /**
      * Return dependency mappings for this component.
      *
-     * If zend-servicemanager is installed, this will alias the HydratorPluginManager
-     * to the `HydratorManager` service; otherwise, it aliases the
-     * StandaloneHydratorPluginManager.
-     *
-     * @return string[][]
+     * @return array
      */
-    public function getDependencyConfig() : array
+    public function getDependencyConfig()
     {
-        $hydratorManagerTarget = class_exists(ServiceManager::class)
-            ? HydratorPluginManager::class
-            : StandaloneHydratorPluginManager::class;
-
         return [
             'aliases' => [
-                'HydratorManager' => $hydratorManagerTarget,
+                'HydratorManager' => HydratorPluginManager::class,
             ],
             'factories' => [
-                HydratorPluginManager::class           => HydratorPluginManagerFactory::class,
-                StandaloneHydratorPluginManager::class => StandaloneHydratorPluginManagerFactory::class,
+                HydratorPluginManager::class => HydratorPluginManagerFactory::class,
             ],
         ];
     }
