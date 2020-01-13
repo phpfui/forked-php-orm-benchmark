@@ -1,18 +1,16 @@
 <?php
 /**
- * @see       https://github.com/zendframework/zend-hydrator for the canonical source repository
- * @copyright Copyright (c) 2010-2018 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   https://github.com/zendframework/zend-hydrator/blob/master/LICENSE.md New BSD License
+ * Zend Framework (http://framework.zend.com/)
+ *
+ * @link      http://github.com/zendframework/zf2 for the canonical source repository
+ * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
-
-declare(strict_types=1);
 
 namespace Zend\Hydrator\Strategy;
 
+use Traversable;
 use Zend\Stdlib\ArrayUtils;
-
-use function array_map;
-use function array_reverse;
 
 final class StrategyChain implements StrategyInterface
 {
@@ -31,9 +29,11 @@ final class StrategyChain implements StrategyInterface
     private $hydrationStrategies;
 
     /**
-     * @param StrategyInterface[] $extractionStrategies
+     * Constructor
+     *
+     * @param array|Traversable $extractionStrategies
      */
-    public function __construct(iterable $extractionStrategies)
+    public function __construct($extractionStrategies)
     {
         $extractionStrategies = ArrayUtils::iteratorToArray($extractionStrategies);
         $this->extractionStrategies = array_map(
@@ -50,10 +50,10 @@ final class StrategyChain implements StrategyInterface
     /**
      * {@inheritDoc}
      */
-    public function extract($value, ?object $object = null)
+    public function extract($value)
     {
         foreach ($this->extractionStrategies as $strategy) {
-            $value = $strategy->extract($value, $object);
+            $value = $strategy->extract($value);
         }
 
         return $value;
@@ -62,10 +62,10 @@ final class StrategyChain implements StrategyInterface
     /**
      * {@inheritDoc}
      */
-    public function hydrate($value, ?array $data = null)
+    public function hydrate($value)
     {
         foreach ($this->hydrationStrategies as $strategy) {
-            $value = $strategy->hydrate($value, $data);
+            $value = $strategy->hydrate($value);
         }
 
         return $value;

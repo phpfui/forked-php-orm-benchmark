@@ -1,22 +1,40 @@
 <?php
 /**
- * @see       https://github.com/zendframework/zend-hydrator for the canonical source repository
- * @copyright Copyright (c) 2010-2018 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   https://github.com/zendframework/zend-hydrator/blob/master/LICENSE.md New BSD License
+ * Zend Framework (http://framework.zend.com/)
+ *
+ * @link      http://github.com/zendframework/zf2 for the canonical source repository
+ * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
-
-declare(strict_types=1);
 
 namespace Zend\Hydrator;
 
-use Psr\Container\ContainerInterface;
+use Interop\Container\ContainerInterface;
+use Zend\ServiceManager\FactoryInterface;
+use Zend\ServiceManager\ServiceLocatorInterface;
 
-class DelegatingHydratorFactory
+class DelegatingHydratorFactory implements FactoryInterface
 {
     /**
-     * Creates DelegatingHydrator
+     * Creates DelegatingHydrator (v2)
+     *
+     * @param  ServiceLocatorInterface $serviceLocator
+     * @return DelegatingHydrator
      */
-    public function __invoke(ContainerInterface $container) : DelegatingHydrator
+    public function createService(ServiceLocatorInterface $serviceLocator)
+    {
+        return $this($serviceLocator, '');
+    }
+
+    /**
+     * Creates DelegatingHydrator (v3)
+     *
+     * @param ContainerInterface $container
+     * @param string $requestedName
+     * @param array|null $options
+     * @return DelegatingHydrator
+     */
+    public function __invoke(ContainerInterface $container, $requestedName, array $options = null)
     {
         $container = $this->marshalHydratorPluginManager($container);
         return new DelegatingHydrator($container);
@@ -24,11 +42,14 @@ class DelegatingHydratorFactory
 
     /**
      * Locate and return a HydratorPluginManager instance.
+     *
+     * @param ContainerInterface $container
+     * @return HydratorPluginManager
      */
-    private function marshalHydratorPluginManager(ContainerInterface $container) : ContainerInterface
+    private function marshalHydratorPluginManager(ContainerInterface $container)
     {
         // Already one? Return it.
-        if ($container instanceof HydratorPluginManagerInterface) {
+        if ($container instanceof HydratorPluginManager) {
             return $container;
         }
 

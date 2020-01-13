@@ -1,56 +1,65 @@
 <?php
 /**
- * @see       https://github.com/zendframework/zend-hydrator for the canonical source repository
- * @copyright Copyright (c) 2010-2018 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   https://github.com/zendframework/zend-hydrator/blob/master/LICENSE.md New BSD License
+ * Zend Framework (http://framework.zend.com/)
+ *
+ * @link      http://github.com/zendframework/zf2 for the canonical source repository
+ * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
-
-declare(strict_types=1);
 
 namespace Zend\Hydrator;
 
-use function sprintf;
+use ArrayObject;
 
 abstract class AbstractHydrator implements
     HydratorInterface,
-    Strategy\StrategyEnabledInterface,
-    Filter\FilterEnabledInterface,
-    NamingStrategy\NamingStrategyEnabledInterface
+    StrategyEnabledInterface,
+    FilterEnabledInterface,
+    NamingStrategyEnabledInterface
 {
     /**
      * The list with strategies that this hydrator has.
      *
-     * @var Strategy\StrategyInterface[]
+     * @var ArrayObject
      */
-    protected $strategies = [];
+    protected $strategies;
 
     /**
      * An instance of NamingStrategy\NamingStrategyInterface
      *
-     * @var null|NamingStrategy\NamingStrategyInterface
+     * @var NamingStrategy\NamingStrategyInterface
      */
     protected $namingStrategy;
 
     /**
      * Composite to filter the methods, that need to be hydrated
      *
-     * @var null|Filter\FilterComposite
+     * @var Filter\FilterComposite
      */
     protected $filterComposite;
+
+    /**
+     * Initializes a new instance of this class.
+     */
+    public function __construct()
+    {
+        $this->strategies = new ArrayObject();
+        $this->filterComposite = new Filter\FilterComposite();
+    }
 
     /**
      * Gets the strategy with the given name.
      *
      * @param string $name The name of the strategy to get.
+     *
      * @throws Exception\InvalidArgumentException
+     * @return Strategy\StrategyInterface
      */
-    public function getStrategy(string $name) : Strategy\StrategyInterface
+    public function getStrategy($name)
     {
         if (isset($this->strategies[$name])) {
             return $this->strategies[$name];
-        }
-
-        if ($this->hasNamingStrategy()
+        } elseif ($this->hasNamingStrategy()
             && ($hydrated = $this->getNamingStrategy()->hydrate($name))
             && isset($this->strategies[$hydrated])
         ) {
@@ -72,20 +81,21 @@ abstract class AbstractHydrator implements
      * Checks if the strategy with the given name exists.
      *
      * @param string $name The name of the strategy to check for.
+     * @return bool
      */
-    public function hasStrategy(string $name) : bool
+    public function hasStrategy($name)
     {
-        if (isset($this->strategies[$name])) {
+        if (array_key_exists($name, $this->strategies)) {
             return true;
         }
 
         if ($this->hasNamingStrategy()
-            && isset($this->strategies[$this->getNamingStrategy()->hydrate($name)])
+            && array_key_exists($this->getNamingStrategy()->hydrate($name), $this->strategies)
         ) {
             return true;
         }
 
-        return isset($this->strategies['*']);
+        return array_key_exists('*', $this->strategies);
     }
 
     /**
@@ -93,85 +103,98 @@ abstract class AbstractHydrator implements
      *
      * @param string $name The name of the strategy to register.
      * @param Strategy\StrategyInterface $strategy The strategy to register.
+     * @return AbstractHydrator
      */
-    public function addStrategy(string $name, Strategy\StrategyInterface $strategy) : void
+    public function addStrategy($name, Strategy\StrategyInterface $strategy)
     {
         $this->strategies[$name] = $strategy;
+        return $this;
     }
 
     /**
      * Removes the strategy with the given name.
      *
      * @param string $name The name of the strategy to remove.
+     * @return HydratorInterface
      */
-    public function removeStrategy(string $name) : void
+    public function removeStrategy($name)
     {
         unset($this->strategies[$name]);
+        return $this;
     }
 
     /**
      * Converts a value for extraction. If no strategy exists the plain value is returned.
      *
-     * @param  string      $name   The name of the strategy to use.
-     * @param  mixed       $value  The value that should be converted.
-     * @param  null|object $object The object is optionally provided as context.
+     * @param  string $name  The name of the strategy to use.
+     * @param  mixed  $value  The value that should be converted.
+     * @param  mixed  $object The object is optionally provided as context.
      * @return mixed
      */
-    public function extractValue(string $name, $value, ?object $object = null)
+    public function extractValue($name, $value, $object = null)
     {
-        return $this->hasStrategy($name)
-            ? $this->getStrategy($name)->extract($value, $object)
-            : $value;
+        if ($this->hasStrategy($name)) {
+            $strategy = $this->getStrategy($name);
+            $value = $strategy->extract($value, $object);
+        }
+        return $value;
     }
 
     /**
      * Converts a value for hydration. If no strategy exists the plain value is returned.
      *
-     * @param  string     $name  The name of the strategy to use.
-     * @param  mixed      $value The value that should be converted.
-     * @param  null|array $data  The whole data is optionally provided as context.
+     * @param string $name The name of the strategy to use.
+     * @param mixed $value The value that should be converted.
+     * @param array $data The whole data is optionally provided as context.
      * @return mixed
      */
-    public function hydrateValue(string $name, $value, ?array $data = null)
+    public function hydrateValue($name, $value, $data = null)
     {
-        return $this->hasStrategy($name)
-            ? $this->getStrategy($name)->hydrate($value, $data)
-            : $value;
+        if ($this->hasStrategy($name)) {
+            $strategy = $this->getStrategy($name);
+            $value = $strategy->hydrate($value, $data);
+        }
+        return $value;
     }
 
     /**
      * Convert a name for extraction. If no naming strategy exists, the plain value is returned.
      *
-     * @param  string      $name    The name to convert.
-     * @param  null|object $object  The object is optionally provided as context.
+     * @param string $name    The name to convert.
+     * @param null   $object  The object is optionally provided as context.
      * @return mixed
      */
-    public function extractName(string $name, ?object $object = null)
+    public function extractName($name, $object = null)
     {
-        return $this->hasNamingStrategy()
-            ? $this->getNamingStrategy()->extract($name, $object)
-            : $name;
+        if ($this->hasNamingStrategy()) {
+            $name = $this->getNamingStrategy()->extract($name, $object);
+        }
+        return $name;
     }
 
     /**
      * Converts a value for hydration. If no naming strategy exists, the plain value is returned.
      *
-     * @param  string       $name  The name to convert.
-     * @param  null|mixed[] $data  The whole data is optionally provided as context.
+     * @param string $name  The name to convert.
+     * @param array  $data  The whole data is optionally provided as context.
+     * @return mixed
      */
-    public function hydrateName(string $name, ?array $data = null) : string
+    public function hydrateName($name, $data = null)
     {
-        return $this->hasNamingStrategy()
-            ? $this->getNamingStrategy()->hydrate($name, $data)
-            : $name;
+        if ($this->hasNamingStrategy()) {
+            $name = $this->getNamingStrategy()->hydrate($name, $data);
+        }
+        return $name;
     }
 
     /**
      * Get the filter instance
+     *
+     * @return Filter\FilterComposite
      */
-    public function getFilter() : Filter\FilterInterface
+    public function getFilter()
     {
-        return $this->getCompositeFilter();
+        return $this->filterComposite;
     }
 
     /**
@@ -192,93 +215,83 @@ abstract class AbstractHydrator implements
      *
      * @param string $name Index in the composite
      * @param callable|Filter\FilterInterface $filter
+     * @param int $condition
+     * @return Filter\FilterComposite
      */
-    public function addFilter(string $name, $filter, int $condition = Filter\FilterComposite::CONDITION_OR) : void
+    public function addFilter($name, $filter, $condition = Filter\FilterComposite::CONDITION_OR)
     {
-        $this->getCompositeFilter()->addFilter($name, $filter, $condition);
+        return $this->filterComposite->addFilter($name, $filter, $condition);
     }
 
     /**
      * Check whether a specific filter exists at key $name or not
      *
-     * @param string $name Index/name in the composite
+     * @param string $name Index in the composite
+     * @return bool
      */
-    public function hasFilter(string $name) : bool
+    public function hasFilter($name)
     {
-        return $this->getCompositeFilter()->hasFilter($name);
+        return $this->filterComposite->hasFilter($name);
     }
 
     /**
      * Remove a filter from the composition.
-     *
-     * To not extract "has" methods, unregister the filter.
+     * To not extract "has" methods, you simply need to unregister it
      *
      * <code>
      * $filterComposite->removeFilter('has');
      * </code>
+     *
+     * @param $name
+     * @return Filter\FilterComposite
      */
-    public function removeFilter(string $name) : void
+    public function removeFilter($name)
     {
-        $this->getCompositeFilter()->removeFilter($name);
+        return $this->filterComposite->removeFilter($name);
     }
 
     /**
      * Adds the given naming strategy
      *
      * @param NamingStrategy\NamingStrategyInterface $strategy The naming to register.
+     * @return self
      */
-    public function setNamingStrategy(NamingStrategy\NamingStrategyInterface $strategy) : void
+    public function setNamingStrategy(NamingStrategy\NamingStrategyInterface $strategy)
     {
         $this->namingStrategy = $strategy;
+
+        return $this;
     }
 
     /**
      * Gets the naming strategy.
      *
-     * If no naming strategy is registered, registers the
-     * `IdentityNamingStrategy`, which acts essentially as a no-op.
-     *
-     * {@inheritDoc}
+     * @return NamingStrategy\NamingStrategyInterface
      */
-    public function getNamingStrategy() : NamingStrategy\NamingStrategyInterface
+    public function getNamingStrategy()
     {
-        if (null === $this->namingStrategy) {
-            $this->namingStrategy = new NamingStrategy\IdentityNamingStrategy();
-        }
         return $this->namingStrategy;
     }
 
     /**
      * Checks if a naming strategy exists.
+     *
+     * @return bool
      */
-    public function hasNamingStrategy() : bool
+    public function hasNamingStrategy()
     {
         return isset($this->namingStrategy);
     }
 
     /**
      * Removes the naming strategy
+     *
+     * @return self
      */
-    public function removeNamingStrategy() : void
+    public function removeNamingStrategy()
     {
         $this->namingStrategy = null;
-    }
 
-    /**
-     * Lazy-load the composite filter instance.
-     *
-     * If no instance is yet registerd for the $filterComposite property, this
-     * method will lazy load one.
-     *
-     * @throws Exception\DomainException if composed $filterComposite is not a
-     *     Filter\FilterComposite instance, nor null.
-     */
-    protected function getCompositeFilter() : Filter\FilterComposite
-    {
-        if (! $this->filterComposite) {
-            $this->filterComposite = new Filter\FilterComposite();
-        }
-
-        return $this->filterComposite;
+        return $this;
     }
 }

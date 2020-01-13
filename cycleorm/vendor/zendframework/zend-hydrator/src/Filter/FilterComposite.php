@@ -1,33 +1,23 @@
 <?php
 /**
- * @see       https://github.com/zendframework/zend-hydrator for the canonical source repository
- * @copyright Copyright (c) 2010-2018 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   https://github.com/zendframework/zend-hydrator/blob/master/LICENSE.md New BSD License
+ * Zend Framework (http://framework.zend.com/)
+ *
+ * @link           http://github.com/zendframework/zf2 for the canonical source repository
+ * @copyright      Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license        http://framework.zend.com/license/new-bsd New BSD License
  */
-
-declare(strict_types=1);
 
 namespace Zend\Hydrator\Filter;
 
 use ArrayObject;
 use Zend\Hydrator\Exception\InvalidArgumentException;
 
-use function array_walk;
-use function count;
-use function is_callable;
-use function sprintf;
-
 class FilterComposite implements FilterInterface
 {
     /**
-     * Constant to add with "or" condition
+     * @var ArrayObject
      */
-    public const CONDITION_OR = 1;
-
-    /**
-     * Constant to add with "and" condition
-     */
-    public const CONDITION_AND = 2;
+    protected $orFilter;
 
     /**
      * @var ArrayObject
@@ -35,18 +25,23 @@ class FilterComposite implements FilterInterface
     protected $andFilter;
 
     /**
-     * @var ArrayObject
+     * Constant to add with "or" condition
      */
-    protected $orFilter;
+    const CONDITION_OR = 1;
+
+    /**
+     * Constant to add with "and" condition
+     */
+    const CONDITION_AND = 2;
 
     /**
      * We can pass a list of OR/AND filters through construct
      *
-     * @param callable[]|FilterInterface[] $orFilters
-     * @param callable[]|FilterInterface[] $andFilters
+     * @param array $orFilters
+     * @param array $andFilters
      * @throws InvalidArgumentException
      */
-    public function __construct(array $orFilters = [], array $andFilters = [])
+    public function __construct($orFilters = [], $andFilters = [])
     {
         array_walk($orFilters, [$this, 'validateFilter']);
         array_walk($andFilters, [$this, 'validateFilter']);
@@ -71,38 +66,44 @@ class FilterComposite implements FilterInterface
      * );
      * </code>
      *
+     * @param  string                   $name
      * @param  callable|FilterInterface $filter
      * @param  int                      $condition Can be either
      *     FilterComposite::CONDITION_OR or FilterComposite::CONDITION_AND
      * @throws InvalidArgumentException
+     * @return FilterComposite
      */
-    public function addFilter(string $name, $filter, int $condition = self::CONDITION_OR) : void
+    public function addFilter($name, $filter, $condition = self::CONDITION_OR)
     {
         $this->validateFilter($filter, $name);
 
         if ($condition === self::CONDITION_OR) {
             $this->orFilter[$name] = $filter;
-            return;
+        } elseif ($condition === self::CONDITION_AND) {
+            $this->andFilter[$name] = $filter;
         }
 
-        if ($condition === self::CONDITION_AND) {
-            $this->andFilter[$name] = $filter;
-            return;
-        }
+        return $this;
     }
 
     /**
      * Check if $name has a filter registered
+     *
+     * @param $name string Identifier for the filter
+     * @return bool
      */
-    public function hasFilter(string $name) : bool
+    public function hasFilter($name)
     {
         return isset($this->orFilter[$name]) || isset($this->andFilter[$name]);
     }
 
     /**
      * Remove a filter from the composition
+     *
+     * @param $name string Identifier for the filter
+     * @return FilterComposite
      */
-    public function removeFilter(string $name) : void
+    public function removeFilter($name)
     {
         if (isset($this->orFilter[$name])) {
             unset($this->orFilter[$name]);
@@ -111,26 +112,30 @@ class FilterComposite implements FilterInterface
         if (isset($this->andFilter[$name])) {
             unset($this->andFilter[$name]);
         }
+
+        return $this;
     }
 
     /**
      * Filter the composite based on the AND and OR condition
-     *
      * Will return true if one from the "or conditions" and all from
      * the "and condition" returns true. Otherwise false
      *
-     * @param string $property Parameter will be e.g. Parent\Namespace\Class::method
+     * @param $property string Parameter will be e.g. Parent\Namespace\Class::method
+     * @return bool
      */
-    public function filter(string $property) : bool
+    public function filter($property)
     {
         $andCount = count($this->andFilter);
         $orCount = count($this->orFilter);
         // return true if no filters are registered
         if ($orCount === 0 && $andCount === 0) {
             return true;
+        } elseif ($orCount === 0 && $andCount !== 0) {
+            $returnValue = true;
+        } else {
+            $returnValue = false;
         }
-
-        $returnValue = $orCount === 0 && $andCount !== 0;
 
         // Check if 1 from the or filters return true
         foreach ($this->orFilter as $filter) {
@@ -140,11 +145,11 @@ class FilterComposite implements FilterInterface
                     break;
                 }
                 continue;
-            }
-
-            if ($filter->filter($property) === true) {
-                $returnValue = true;
-                break;
+            } else {
+                if ($filter->filter($property) === true) {
+                    $returnValue = true;
+                    break;
+                }
             }
         }
 
@@ -155,10 +160,10 @@ class FilterComposite implements FilterInterface
                     return false;
                 }
                 continue;
-            }
-
-            if ($filter->filter($property) === false) {
-                return false;
+            } else {
+                if ($filter->filter($property) === false) {
+                    return false;
+                }
             }
         }
 
@@ -166,19 +171,22 @@ class FilterComposite implements FilterInterface
     }
 
     /**
-     * @param mixed $filter Filters should be callable or
-     *     FilterInterface instances.
-     * @throws InvalidArgumentException if $filter is neither a
-     *     callable nor FilterInterface
+     * @param FilterInterface|callable $filter
+     * @param string $name
+     *
+     * @return void
+     * @throws InvalidArgumentException
      */
-    private function validateFilter($filter, string $name) : void
+    private function validateFilter($filter, $name)
     {
         if (! is_callable($filter) && ! $filter instanceof FilterInterface) {
-            throw new InvalidArgumentException(sprintf(
-                'The value of %s should be either a callable or an instance of %s',
-                $name,
-                FilterInterface::class
-            ));
+            throw new InvalidArgumentException(
+                sprintf(
+                    'The value of %s should be either a callable or an ' .
+                    'instance of Zend\Hydrator\Filter\FilterInterface',
+                    $name
+                )
+            );
         }
     }
 }

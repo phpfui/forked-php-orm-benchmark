@@ -1,5 +1,7 @@
 {
   "require": {
-    "cycle/orm": "*"
+    "cycle/orm": "*",
+    "zendframework/zend-hydrator": "2.4",
+    "ocramius/generated-hydrator": "^2.2"
   }
 }

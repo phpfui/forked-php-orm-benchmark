@@ -1,11 +1,11 @@
 <?php
 /**
- * @see       https://github.com/zendframework/zend-hydrator for the canonical source repository
- * @copyright Copyright (c) 2010-2018 Zend Technologies USA Inc. (http://www.zend.com)
- * @license   https://github.com/zendframework/zend-hydrator/blob/master/LICENSE.md New BSD License
+ * Zend Framework (http://framework.zend.com/)
+ *
+ * @link      http://github.com/zendframework/zf2 for the canonical source repository
+ * @copyright Copyright (c) 2005-2015 Zend Technologies USA Inc. (http://www.zend.com)
+ * @license   http://framework.zend.com/license/new-bsd New BSD License
  */
-
-declare(strict_types=1);
 
 namespace Zend\Hydrator\Strategy;
 
@@ -20,9 +20,9 @@ class ClosureStrategy implements StrategyInterface
      * };
      * </code>
      *
-     * @var null|callable
+     * @var callable
      */
-    protected $extractFunc;
+    protected $extractFunc = null;
 
     /**
      * Function, used in hydrate method, default:
@@ -33,9 +33,9 @@ class ClosureStrategy implements StrategyInterface
      * };
      * </code>
      *
-     * @var null|callable
+     * @var callable
      */
-    protected $hydrateFunc;
+    protected $hydrateFunc = null;
 
     /**
      * You can describe how your values will extract and hydrate, like this:
@@ -51,38 +51,63 @@ class ClosureStrategy implements StrategyInterface
      * ));
      * </code>
      *
-     * @param null|callable $extractFunc function for extracting values from an object
-     * @param null|callable $hydrateFunc function for hydrating values to an object
+     * @param callable $extractFunc - anonymous function, that extract values
+     *     from object
+     * @param callable $hydrateFunc - anonymous function, that hydrate values
+     *     into object
      */
-    public function __construct(?callable $extractFunc = null, ?callable $hydrateFunc = null)
+    public function __construct($extractFunc = null, $hydrateFunc = null)
     {
-        $this->extractFunc = $extractFunc;
-        $this->hydrateFunc = $hydrateFunc;
+        if (isset($extractFunc)) {
+            if (! is_callable($extractFunc)) {
+                throw new \Exception('$extractFunc must be callable');
+            }
+
+            $this->extractFunc = $extractFunc;
+        } else {
+            $this->extractFunc = function ($value) {
+                return $value;
+            };
+        }
+
+        if (isset($hydrateFunc)) {
+            if (! is_callable($hydrateFunc)) {
+                throw new \Exception('$hydrateFunc must be callable');
+            }
+
+            $this->hydrateFunc = $hydrateFunc;
+        } else {
+            $this->hydrateFunc = function ($value) {
+                return $value;
+            };
+        }
     }
 
     /**
      * Converts the given value so that it can be extracted by the hydrator.
      *
-     * {@inheritDoc}
+     * @param  mixed $value  The original value.
+     * @param  array $object The object is optionally provided as context.
+     * @return mixed Returns the value that should be extracted.
      */
-    public function extract($value, ?object $object = null)
+    public function extract($value, $object = null)
     {
         $func = $this->extractFunc;
-        return $func
-            ? $func($value, $object)
-            : $value;
+
+        return $func($value, $object);
     }
 
     /**
      * Converts the given value so that it can be hydrated by the hydrator.
      *
-     * {@inheritDoc}
+     * @param  mixed $value The original value.
+     * @param  array $data  The whole data is optionally provided as context.
+     * @return mixed Returns the value that should be hydrated.
      */
-    public function hydrate($value, ?array $data = null)
+    public function hydrate($value, $data = null)
     {
         $func = $this->hydrateFunc;
-        return $func
-            ? $func($value, $data)
-            : $value;
+
+        return $func($value, $data);
     }
 }
