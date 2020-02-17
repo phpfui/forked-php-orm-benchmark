@@ -42,12 +42,12 @@ class EloquentTestSuite extends AbstractTestSuite
 	
 	function beginTransaction()
 	{
-        #$this->capsule->getConnection()->beginTransaction();
+        $this->capsule->getConnection()->beginTransaction();
 	}
 	
 	function commit()
 	{
-        #$this->capsule->getConnection()->commit();
+        $this->capsule->getConnection()->commit();
 	}
 	
 	function runAuthorInsertion($i)
@@ -85,8 +85,6 @@ class EloquentTestSuite extends AbstractTestSuite
 	function runHydrate($i)
 	{
 		$books = Book::where('price', '>', $i)->limit(50)->get();
-		foreach ($books as $book) {
-		}
 	}
 	
 	function runJoinSearch($i)

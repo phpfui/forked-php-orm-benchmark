@@ -51,9 +51,9 @@ abstract class AbstractTestSuite
 	
 	public function run()
 	{
-		$t1 =  $this->runTest('runAuthorInsertion', 2000);
-		$t1 += $this->runTest('runBookInsertion', 2000);
-		$t2 = $this->runTest('runPKSearch', 500);
+		$t1 =  $this->runTest('runAuthorInsertion', 1000);
+		$t1 += $this->runTest('runBookInsertion', 1000);
+		$t2 = $this->runTest('runPKSearch', 1000);
 		$t3 = $this->runTest('runComplexQuery', 1000);
 		$t4 = $this->runTest('runHydrate', 1000);
 		$t5 = $this->runTest('runJoinSearch', 1000);
