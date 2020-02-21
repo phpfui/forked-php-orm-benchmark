@@ -98,7 +98,7 @@ with threads that have the "foo" tag on them:
 
 ```php
 $authorsWithThreadsAndTags = $atlas
-    ->select(Author::CLASS)
+    ->select(Category::CLASS)
     ->joinWith('threads', function ($sub) {
         $sub->joinWith('taggings', function ($sub) {
             $sub->joinWith('tag');

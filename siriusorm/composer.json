@@ -1,0 +1,5 @@
+{
+    "require": {
+        "siriusphp/orm": "^0.9.0"
+    }
+}

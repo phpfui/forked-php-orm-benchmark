@@ -42,7 +42,7 @@ with an Author Record using the `author_id` column. The relationship is named
 `author`. (See the section on relationships for more information.)
 
 ```php
-$author = $atlas->fetchRecord(Author::CLASS, 4);
+$author = $atlas->fetchRecord(Category::CLASS, 4);
 $thread = $atlas->newRecord(Thread::CLASS,
     [
         'title' => 'New Thread Title',
@@ -65,7 +65,7 @@ echo $thread->author_id; // 4
 The following will fail.
 
 ```php
-$author = $atlas->newRecord(Author::CLASS,
+$author = $atlas->newRecord(Category::CLASS,
     [
         'first_name' => 'Sterling',
         'last_name' => 'Archer'
@@ -106,7 +106,7 @@ records.
 
 ```php
 $thread = $atlas->fetchRecord(Thread::CLASS, 3);
-$author = $atlas->fetchRecord(Author::CLASS, 4);
+$author = $atlas->fetchRecord(Category::CLASS, 4);
 
 // Modify the author
 $thread->author = $author;

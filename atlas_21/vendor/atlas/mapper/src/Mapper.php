@@ -60,8 +60,7 @@ abstract class Mapper
     public function fetchRecord($primaryVal, array $with = []) : ?Record
     {
         $serial = $this->identityMap->getSerial($primaryVal);
-        $row = $this->identityMap->getRow($serial)
-            ?? $this->table->selectRow($this->select(), $primaryVal);
+        $row = $this->table->selectRow($this->select(), $primaryVal);
 
         if ($row === null) {
             return null;

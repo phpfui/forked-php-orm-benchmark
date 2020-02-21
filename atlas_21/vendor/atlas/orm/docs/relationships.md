@@ -58,7 +58,7 @@ class ThreadRelationships extends MapperRelationships
 {
     protected function define()
     {
-        $this->manyToOne('author', Author::CLASS, [
+        $this->manyToOne('author', Category::CLASS, [
             // native (threads) column => foreign (authors) column
             'author_id' => 'id',
         ]);

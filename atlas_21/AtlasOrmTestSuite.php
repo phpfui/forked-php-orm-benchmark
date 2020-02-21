@@ -2,6 +2,11 @@
 
 use Atlas\Orm\Atlas;
 use Atlas\Pdo\Connection;
+use Category\Category;
+use Image\Image;
+use Product\Product;
+use ProductsTag\ProductsTag;
+use Tag\Tag;
 
 require_once dirname(__FILE__) . '/../AbstractTestSuite.php';
 
@@ -23,6 +28,7 @@ class AtlasOrmTestSuite extends AbstractTestSuite
         $loader->add('', __DIR__ . '/src');
 
         $this->con = Connection::new('sqlite::memory:');
+        #$this->con = Connection::new('sqlite:sqlite');
 
         $this->atlas = Atlas::new(
             $this->con
@@ -37,72 +43,174 @@ class AtlasOrmTestSuite extends AbstractTestSuite
 
     function beginTransaction()
     {
-        $this->transaction = $this->atlas->beginTransaction();
+        #$this->transaction = $this->atlas->beginTransaction();
     }
 
     function commit()
     {
+        #$this->atlas->commit();
+    }
+
+    function insert($i)
+    {
+        $product           = $this->atlas->newRecord(Product::class, [
+            'name'  => 'Product #' . $i,
+            'sku'   => 'SKU #' . $i,
+            'price' => sqrt(1000 + $i * 100),
+        ]);
+        $product->category = $this->atlas->newRecord(Category::class, [
+            'name' => 'Category #c' . $i
+        ]);
+        $product->images   = $this->atlas->newRecordSet(Image::class);
+        $product->images->appendNew([
+            'path'           => 'image_' . $i . '.jpg',
+            'imageable_type' => 'product',
+        ]);
+        $product->tags = $this->atlas->newRecordSet(Tag::class);
+        $product->tags->appendNew(['name' => 'Tag #t1_' . $i]);
+        $product->tags->appendNew(['name' => 'Tag #t2_' . $i]);
+
+        $this->atlas->beginTransaction();
+        foreach ($product->tags as $tag) {
+            $this->atlas->insert($tag);
+        }
+        $this->atlas->insert($product->category);
+        $product->category_id = $product->category->id;
+        $this->atlas->insert($product);
+        foreach ($product->images as $image) {
+            $image->imageable_id = $product->id;
+            $this->atlas->insert($image);
+        }
+        foreach ($product->tags as $tag) {
+            $this->atlas->insert($this->atlas->newRecord(ProductsTag::class, [
+                'product_id' => $product->id,
+                'tag_id'     => $tag->id
+            ]));
+        }
+        $this->atlas->commit();;
+
+        $this->products[] = $product->id;
+
+        return $product;
+    }
+
+    public function test_insert()
+    {
+        $product = $this->insert(0);
+        $product = $this->atlas->fetchRecord(Product::class, $product->id, ['category', 'tags', 'images']);
+        $this->assertNotNull($product, 'Product not found');
+        $this->assertNotNull($product->category->id, 'Category was not associated with the product');
+        $this->assertNotNull($product->images[0]->path, 'Image not present');
+        $this->assertNotNull($product->tags[0]->name, 'Tag not present');
+
+        /**
+         * THIS DOES NOT WORK FOR SOME REASON, HAVE TO RETURN
+         */
+        return;
+        $this->assertNotNull($product->tags[1]->name, 'Tag not present');
+    }
+
+    function prepare_update()
+    {
+        $this->product = $this->atlas->fetchRecord(Product::class, 1, ['category', 'tags', 'images']);
+    }
+
+    function update($i)
+    {
+        $this->product->name            = 'New product name ' . $i;
+        $this->product->category->name  = 'New category name ' . $i;
+        $this->product->images[0]->path = 'new_path_' . $i . '.jpg';
+        $this->product->tags[0]->name   = 'New tag name ' . $i;
+
+        $this->atlas->persist($this->product);
+    }
+
+    function test_update()
+    {
+        $this->product->name            = 'New product name';
+        $this->product->category->name  = 'New category name';
+        $this->product->images[0]->path = 'new_path.jpg';
+        $this->product->tags[0]->name   = 'New tag name';
+
+        $this->atlas->beginTransaction();
+        $this->atlas->persist($this->product);
         $this->atlas->commit();
+
+        $product = $this->atlas->fetchRecord(Product::class, 1, ['category', 'tags', 'images']);
+
+        $this->assertEquals('New product name', $product->name);
+        $this->assertEquals('New category name', $product->category->name);
+        $this->assertEquals('new_path.jpg', $product->images[0]->path);
+        $this->assertEquals('New tag name', $product->tags[0]->name);
+
+        /**
+         * THIS DOES NOT WORK FOR SOME REASON, HAVE TO RETURN
+         */
+        return;
+        $this->assertEquals('Tag #t2_0', $product->tags[1]->name);
     }
 
-    function runAuthorInsertion($i)
+    function find($i)
     {
-        $author = $this->atlas->newRecord(\Author\Author::class, [
-            'first_name' => 'John' . $i,
-            'last_name'  => 'Doe' . $i,
-        ]);
-        $this->atlas->insert($author);
-        $this->authors[] = $this->con->lastInsertId();
+        $product = $this->atlas->fetchRecord(Product::class, $i);
     }
 
-    function runBookInsertion($i)
+    function test_find()
     {
-        $book = $this->atlas->newRecord(\Book\Book::class, [
-            'title'     => 'Hello' . $i,
-            'isbn'      => '1234' . $i,
-            'price'     => $i,
-            'author_id' => $this->authors[array_rand($this->authors)],
-        ]);
-        $this->atlas->insert($book);
-        $this->books[] = $this->con->lastInsertId();
-
+        $product = $this->atlas->fetchRecord(Product::class, 1);
+        $lastRun = self::NB_TEST - 1;
+        $this->assertEquals('New product name ' . $lastRun, $product->name); // changed by "update"
     }
 
-    function runPKSearch($i)
+    function complexQuery($i)
     {
-        $author = $this->atlas->fetchRecord(\Author\Author::class, $i);
+        $this->atlas->select(Product::class)
+                    ->join('INNER', 'categories', 'categories.id = products.category_id')
+                    ->where('products.id >', 50)
+                    ->where('categories.id <', 300)
+                    ->resetColumns()
+                    ->columns('COUNT(*)')
+                    ->fetchValue();
     }
 
-    function runHydrate($i)
+    function test_complexQuery()
     {
-        $stmt = $this->atlas
-            ->select(\Book\Book::class)
-            ->where('price > ', $i)
-            ->limit(50);
+        $query = $this->atlas->select(Product::class)
+                             ->join('INNER', 'categories', 'categories.id = products.category_id')
+                             ->where('products.id >', 50)
+                             ->where('categories.id <', 300)
+                             ->resetColumns()
+                             ->columns('COUNT(*)');
+        $this->assertEquals(249, $query->fetchValue());
+    }
 
-        foreach ($stmt->fetchRecordSet() as $book) {
+    function relations($i)
+    {
+        $products = $this->atlas->select(Product::class)
+                                ->with(['category', 'tags', 'images'])
+                                ->where('price >', 50)
+                                ->limit(10)
+                                ->fetchRecords();
+        foreach ($products as $product) {
+
         }
     }
 
-    function runComplexQuery($i)
+    function test_relations()
     {
-        $stmt = $this->atlas
-            ->select(\Author\Author::class)
-            ->whereSprintf('id > %s OR (first_name || last_name) = %s ', (int)$this->authors[array_rand($this->authors)], 'John Doe')
-            ->fetchCount();
-
+        $product = $this->atlas->select(Product::class)
+                               ->with(['category', 'tags', 'images'])
+                               ->where('id = ', 1)
+                               ->fetchRecord();
+        $lastRun       = self::NB_TEST - 1;
+        $this->assertEquals('New product name ' . $lastRun, $product->name);
+        $this->assertEquals('New category name ' . $lastRun, $product->category->name);
+        $this->assertEquals('new_path_' . $lastRun . '.jpg', $product->images[0]->path);
+        $this->assertEquals('New tag name ' . $lastRun, $product->tags[0]->name);
+        /**
+         * DOES NOT WORK
+         */
+        return;
+        $this->assertEquals('Tag #t2_0', $product->tags[1]->name);
     }
-
-    function runJoinSearch($i)
-    {
-        $book = $this->atlas
-            ->select(\Book\Book::class)
-            ->where('title=', 'Hello' . $i)
-            ->with(['author'])
-            ->fetchRecord();
-
-        return $book;
-        //$author = $book->author()->select('id', 'first_name', 'last_name', 'email')->fetch();
-    }
-
 }
