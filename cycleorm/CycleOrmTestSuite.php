@@ -265,7 +265,7 @@ class CycleOrmTestSuite extends AbstractTestSuite
                 'name' => 'Category #c' . $i
             ]
         );
-        $product->images = new \Doctrine\Common\Collections\ArrayCollection(
+        $product->images = new \Doctrine\Common\Collections\ArrayCollection( // to be improved
             [
                 new Image(
                     [
@@ -275,7 +275,7 @@ class CycleOrmTestSuite extends AbstractTestSuite
             ]
         );
 
-        $product->tags = new \Doctrine\Common\Collections\ArrayCollection(
+        $product->tags = new \Doctrine\Common\Collections\ArrayCollection( // to be improved
             [
                 new Tag(['name' => 'Tag #t1_' . $i]),
                 new Tag(['name' => 'Tag #t2_' . $i])
