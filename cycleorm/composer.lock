@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "cycle/orm",
-            "version": "v1.2.0",
+            "version": "v1.2.3",
             "source": {
                 "type": "git",
                 "url": "https://github.com/cycle/orm.git",
-                "reference": "c135a0acd8db247ffa80c6f09c44d5344de91f5a"
+                "reference": "c1deeac3cf73073d55c35e6be15b9ac8c3935296"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/cycle/orm/zipball/c135a0acd8db247ffa80c6f09c44d5344de91f5a",
-                "reference": "c135a0acd8db247ffa80c6f09c44d5344de91f5a",
+                "url": "https://api.github.com/repos/cycle/orm/zipball/c1deeac3cf73073d55c35e6be15b9ac8c3935296",
+                "reference": "c1deeac3cf73073d55c35e6be15b9ac8c3935296",
                 "shasum": ""
             },
             "require": {
@@ -31,7 +31,7 @@
             },
             "require-dev": {
                 "mockery/mockery": "^1.1",
-                "phpunit/phpunit": "~7.0",
+                "phpunit/phpunit": "~8.0",
                 "ramsey/uuid": "^3.8",
                 "spiral/code-style": "^1.0",
                 "spiral/dumper": "^1.0",
@@ -48,7 +48,7 @@
                 "MIT"
             ],
             "description": "PHP DataMapper ORM and Data Modelling Engine",
-            "time": "2020-01-13T14:17:22+00:00"
+            "time": "2020-02-07T11:29:57+00:00"
         },
         {
             "name": "doctrine/collections",
@@ -550,16 +550,16 @@
         },
         {
             "name": "spiral/database",
-            "version": "v2.7.0",
+            "version": "v2.7.10",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spiral/database.git",
-                "reference": "6229ba89c3225c699e52f41dcd0b6d78de252e25"
+                "reference": "e6d8c8e2f965f8617e8c1c545101f48f57298e35"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spiral/database/zipball/6229ba89c3225c699e52f41dcd0b6d78de252e25",
-                "reference": "6229ba89c3225c699e52f41dcd0b6d78de252e25",
+                "url": "https://api.github.com/repos/spiral/database/zipball/e6d8c8e2f965f8617e8c1c545101f48f57298e35",
+                "reference": "e6d8c8e2f965f8617e8c1c545101f48f57298e35",
                 "shasum": ""
             },
             "require": {
@@ -571,7 +571,7 @@
             },
             "require-dev": {
                 "mockery/mockery": "^1.1",
-                "phpunit/phpunit": "~7.0",
+                "phpunit/phpunit": "~8.0",
                 "spiral/code-style": "^1.0",
                 "spiral/dumper": "^1.0",
                 "spiral/tokenizer": "^2.1"
@@ -593,7 +593,7 @@
                 }
             ],
             "description": "DBAL, schema introspection, migration and pagination",
-            "time": "2020-01-13T11:30:47+00:00"
+            "time": "2020-02-18T10:23:26+00:00"
         },
         {
             "name": "spiral/logger",

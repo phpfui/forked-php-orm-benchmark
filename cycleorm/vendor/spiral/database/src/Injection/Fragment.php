@@ -19,7 +19,7 @@ use Spiral\Database\Driver\CompilerInterface;
  *
  * Example: ...->where('time_created', '>', new SQLFragment("NOW()"));
  */
-final class Fragment implements FragmentInterface
+class Fragment implements FragmentInterface
 {
     /** @var string */
     private $fragment;
@@ -38,6 +38,15 @@ final class Fragment implements FragmentInterface
     public function __toString(): string
     {
         return $this->fragment;
+    }
+
+    /**
+     * @param array $an_array
+     * @return Fragment
+     */
+    public static function __set_state(array $an_array): Fragment
+    {
+        return new self($an_array['fragment'] ?? $an_array['statement']);
     }
 
     /**

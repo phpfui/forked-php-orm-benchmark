@@ -12,6 +12,7 @@ declare(strict_types=1);
 namespace Spiral\Database\Driver;
 
 use Spiral\Database\Exception\CompilerException;
+use Spiral\Database\Injection\Expression;
 use Spiral\Database\Injection\FragmentInterface;
 use Spiral\Database\Injection\Parameter;
 use Spiral\Database\Injection\ParameterInterface;
@@ -96,6 +97,10 @@ abstract class Compiler implements CompilerInterface
                 return $tokens['fragment'];
 
             case self::EXPRESSION:
+                foreach ($tokens['parameters'] as $param) {
+                    $params->push($param);
+                }
+
                 return $q->quote($tokens['expression']);
 
             case self::INSERT_QUERY:
@@ -474,6 +479,11 @@ abstract class Compiler implements CompilerInterface
                 }
 
                 $statement .= $context;
+                continue;
+            }
+
+            if ($context instanceof FragmentInterface) {
+                $statement .= $this->fragment($params, $q, $context);
                 continue;
             }
 

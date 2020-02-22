@@ -85,12 +85,12 @@ abstract class JoinableLoader extends AbstractLoader implements JoinableInterfac
      */
     public function getAlias(): string
     {
-        if (!empty($this->options['using'])) {
+        if ($this->options['using'] !== null) {
             //We are using another relation (presumably defined by with() to load data).
             return $this->options['using'];
         }
 
-        if (!empty($this->options['as'])) {
+        if ($this->options['as'] !== null) {
             return $this->options['as'];
         }
 
@@ -163,7 +163,12 @@ abstract class JoinableLoader extends AbstractLoader implements JoinableInterfac
         $statement = $this->configureQuery($this->initQuery(), $references)->run();
 
         foreach ($statement->fetchAll(StatementInterface::FETCH_NUM) as $row) {
-            $node->parseRow(0, $row);
+            try {
+                $node->parseRow(0, $row);
+            } catch (\Throwable $e) {
+                echo 'x';
+                throw $e;
+            }
         }
 
         $statement->close();
@@ -214,12 +219,12 @@ abstract class JoinableLoader extends AbstractLoader implements JoinableInterfac
                 $this->mountColumns($query, $this->options['minify'], '', true);
             }
 
-            // custom load constrains
-            if ($this->options['load'] instanceof \Closure) {
-                $proxy = new QueryBuilder($this->orm, $query, $this);
-                $proxy = $proxy->withForward($this->isJoined() ? 'onWhere' : 'where');
+            if ($this->options['load'] instanceof ConstrainInterface) {
+                $this->options['load']->apply($this->makeQueryBuilder($query));
+            }
 
-                call_user_func($this->options['load'], $proxy);
+            if (is_callable($this->options['load'], true)) {
+                ($this->options['load'])($this->makeQueryBuilder($query));
             }
         }
 
@@ -233,12 +238,7 @@ abstract class JoinableLoader extends AbstractLoader implements JoinableInterfac
     protected function applyConstrain(SelectQuery $query): SelectQuery
     {
         if ($this->constrain !== null) {
-            $builder = new QueryBuilder($this->orm, $query, $this);
-            if ($this->isJoined()) {
-                $builder = $builder->withForward('onWhere');
-            }
-
-            $this->constrain->apply($builder);
+            $this->constrain->apply($this->makeQueryBuilder($query));
         }
 
         return $query;
@@ -342,5 +342,19 @@ abstract class JoinableLoader extends AbstractLoader implements JoinableInterfac
     protected function getColumns(): array
     {
         return $this->define(Schema::COLUMNS);
+    }
+
+    /**
+     * @param SelectQuery $query
+     * @return QueryBuilder
+     */
+    private function makeQueryBuilder(SelectQuery $query): QueryBuilder
+    {
+        $builder = new QueryBuilder($query, $this);
+        if ($this->isJoined()) {
+            return $builder->withForward('onWhere');
+        }
+
+        return $builder;
     }
 }
