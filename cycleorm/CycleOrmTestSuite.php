@@ -12,6 +12,9 @@ class CycleOrmTestSuite extends AbstractTestSuite
     protected const TAG_MAPPER      = ORM\Mapper\Mapper::class;
     protected const IMAGE_MAPPER    = ORM\Mapper\Mapper::class;
 
+    /**
+     * @var ORM\ORM
+     */
     protected $orm;
 
     protected $transaction;
@@ -383,6 +386,8 @@ class CycleOrmTestSuite extends AbstractTestSuite
 
         foreach ($products as $product) {
         }
+
+        $this->orm->getHeap()->clean();
     }
 
     function test_relations()

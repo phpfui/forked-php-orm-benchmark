@@ -49,14 +49,17 @@ better (i. e. the faster).
 
 | Library                          | Insert | Update | Find   | Complex| EagerL. | memory usage|  time  |
 | --------------------------------:| ------:| ------:| ------:| ------:| -------:| -----------:| ------:|
-|                         AtlasOrm |   1687 |   1315 |    242 |    242 |    8405 |   7,923,952 |  12.00 |
-|                         CycleOrm |  17250 |  32000 |    350 |      0 |       0 |   9,981,544 |  49.83 |
-|      CycleOrmWithGeneratedMapper |  18588 |  34227 |    246 |      0 |       0 |  10,003,336 |  53.36 |
-|                        DoctrineM |  17747 |  34091 |    560 |    302 |    6390 |  12,582,912 |  59.57 |
-|               DoctrineMWithCache |  16390 |  34922 |    571 |    246 |    6511 |  12,582,912 |  58.97 |
-|                         Eloquent |   3676 |   3020 |    675 |    971 |   10119 |   4,194,304 |  18.62 |
-|             EloquentWithoutEvent |   3458 |   2457 |    537 |    663 |    8800 |   4,194,304 |  16.04 |
-|                        SiriusOrm |   1858 |   1413 |    268 |    288 |    8463 |   3,727,744 |  12.35 |
+|                         AtlasOrm |   1609 |   1120 |    212 |    200 |    7866 |   7,923,952 |  11.07 |
+|                         CycleOrm |   2576 |   1647 |    397 |    400 |    6556 |  10,001,720 |  11.71 |
+|      CycleOrmWithGeneratedMapper |   2282 |   1585 |    247 |    504 |    5532 |  12,095,688 |  10.42 |
+|            CycleOrmDynamicSchema |   2538 |   1842 |    252 |    477 |    6041 |   9,968,264 |  11.27 |
+|                        DoctrineM |  17594 |  35030 |    670 |    237 |    7161 |  12,582,912 |  61.10 |
+|               DoctrineMWithCache |  18442 |  34040 |    574 |    272 |    7335 |  12,582,912 |  61.04 |
+|                         Eloquent |   3388 |   2438 |    518 |    781 |    9581 |   4,194,304 |  16.82 |
+|             EloquentWithoutEvent |   3141 |   2155 |    435 |    709 |    8657 |   4,194,304 |  15.21 |
+|                        SiriusOrm |   1797 |   1413 |    308 |    235 |    7963 |   3,727,744 |  11.78 |
+
+
 
 
 For running benchmarks using the Docker shell see [.docker-stack/README.md](./.docker-stack/README.md)
@@ -64,25 +67,27 @@ For running benchmarks using the Docker shell see [.docker-stack/README.md](./.d
 Comments/things to mention about the results. Please understand I'm not proficient in most of the libraries in this test so I might have missed something.
 
 #### Atlas ORM
-- As implemented test is not a full-blown Data Mapper in the sense that it does not generate domain entities but internal objects called `Record` and `RecordSet`. 
+- As implemented in this test, Atlas is not a full-blown Data Mapper in the sense that it does not generate domain entities but internal objects called `Record` and `RecordSet`. 
   To make it generate domain entities one needs to use `Atlas\Transit`. However the `Record` objects provided by Atlas can be easily augmented to improve their functionality enough for most applications
 - **Bug 1**: doesn't save the second tag associated with a product
 - **Bug 2**: the `persist()` method doesn't work as advertised for new Records so I had to use INSERTs
 - This ORM stores the rows retrieved in an Storage object and fetching by ID doesn't necessarily executes the SQL so I had to alter the source code to by-pass the storage (`Mapper` line 63)
+- The memory consumption increases with the number of runs (500 runs consume twice as much memory as 100 runs)
 
 #### Cycle ORM
-- has some columns with missing data because I couldn't make those operations work as the rest of the libraries.
-- **Important note!** For this particular library I have observed an exponential increase in time execution with the number of runs. Doing 500 inserts takes about 10 times more than inserting 100.
+- stable memory consumption (no difference between 100 runs and 500 runs)
 
 #### Doctrine ORM
 - the numbers are skewed on the "find" test because I had to set all relations as eager-loaded so that the "relations" test work as the rest. I would expect lower numbers for find
 - since Doctrine uses an Entity Manager I had to do a lot of `$em->clear()` to make it for a level playing field
+- I have a hunch that the eager loading uses some caching and the numbers are skewed in Doctrine's favour.
+- The memory consumption increases with the number of runs (500 runs consume 50% more memory than 100 runs)
 
 #### Eloquent
-- seems to be the most stable one in terms of memory consumption (increasing the number of runs doesn't increase the memory consumed). I think this is to be expected. 
-Since it's an Active Record implementation and all objects know about everything, the library doesn't have to compile intermediary objects for various operations (eg: retrieving related entities). 
+- stable memory consumption (no difference between 100 runs and 500 runs)
 
 #### Sirius ORM
+- stable memory consumption (no difference between 100 runs and 500 runs)
 - as stated above, I'm the author. However the library doesn't have cache-ing mechanism or any other performance enhancement options (eg: generating Proxy classes). It also doesn't have an event manager or an entity manager. I would say that in
  terms of capabilities is closest to Eloquent (the version without events).
 
