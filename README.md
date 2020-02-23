@@ -41,11 +41,9 @@ The benchmark runs 500 times (a number that you can change in the `AbstractTestS
 
 ## 3. Results
 
-The reference is the PDOTestSuite (the number of tests is adjusted to make raw
-PDO score about 100 to each test). For the ORMs, the smaller score is the
-better (i. e. the faster).
+Smaller score is the better (i. e. the faster).
 
-(updated 2019-Dec-26)
+(updated 2020-February-23)
 
 | Library                          | Insert | Update | Find   | Complex| EagerL. | memory usage|  time  |
 | --------------------------------:| ------:| ------:| ------:| ------:| -------:| -----------:| ------:|
