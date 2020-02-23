@@ -11,6 +11,7 @@ declare(strict_types=1);
 
 namespace Spiral\Database\Driver;
 
+use Spiral\Database\Injection\Expression;
 use Spiral\Database\Injection\FragmentInterface;
 use Spiral\Database\Injection\Parameter;
 use Spiral\Database\Injection\ParameterInterface;
@@ -102,6 +103,12 @@ final class CompilerCache implements CompilerInterface
         $hash = 'i_' . $tokens['table'] . implode('_', $tokens['columns']) . '_r' . ($tokens['return'] ?? '');
         foreach ($tokens['values'] as $value) {
             if ($value instanceof FragmentInterface) {
+                if ($value instanceof Expression) {
+                    foreach ($tokens['parameters'] as $param) {
+                        $params->push($param);
+                    }
+                }
+
                 $hash .= $value;
                 continue;
             }
@@ -213,16 +220,39 @@ final class CompilerCache implements CompilerInterface
                 continue;
             }
 
+            if ($context instanceof FragmentInterface) {
+                if ($context instanceof Expression) {
+                    foreach ($context->getTokens()['parameters'] as $param) {
+                        $params->push($param);
+                    }
+                }
+
+                $hash .= $context;
+                continue;
+            }
+
             if ($context[0] instanceof QueryInterface) {
                 $hash .= $context[0]->getPrefix() === null ? '' : 'p_' . $context[0]->getPrefix();
                 $hash .= $this->hashSelectQuery($params, $context[0]->getTokens());
             } elseif ($context[0] instanceof ParameterInterface) {
                 $hash .= $this->hashParam($params, $context[0]);
             } else {
+                if ($context[0] instanceof Expression) {
+                    foreach ($context[0]->getTokens()['parameters'] as $param) {
+                        $params->push($param);
+                    }
+                }
+
                 $hash .= $context[0];
             }
 
             // operator
+            if ($context[1] instanceof Expression) {
+                foreach ($context[1]->getTokens()['parameters'] as $param) {
+                    $params->push($param);
+                }
+            }
+
             $hash .= $context[1];
 
             if ($context[2] instanceof QueryInterface) {
@@ -231,6 +261,12 @@ final class CompilerCache implements CompilerInterface
             } elseif ($context[2] instanceof ParameterInterface) {
                 $hash .= $this->hashParam($params, $context[2]);
             } else {
+                if ($context[2] instanceof Expression) {
+                    foreach ($context[2]->getTokens()['parameters'] as $param) {
+                        $params->push($param);
+                    }
+                }
+
                 $hash .= $context[2];
             }
 
@@ -241,6 +277,12 @@ final class CompilerCache implements CompilerInterface
                 } elseif ($context[3] instanceof ParameterInterface) {
                     $hash .= $this->hashParam($params, $context[3]);
                 } else {
+                    if ($context[3] instanceof Expression) {
+                        foreach ($context[3]->getTokens()['parameters'] as $param) {
+                            $params->push($param);
+                        }
+                    }
+
                     $hash .= $context[3];
                 }
             }

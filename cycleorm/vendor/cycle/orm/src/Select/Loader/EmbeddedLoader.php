@@ -38,7 +38,10 @@ final class EmbeddedLoader implements JoinableInterface
     private $parent;
 
     /** @var array */
-    private $options = ['load' => false, 'minify' => true];
+    private $options = [
+        'load'   => false,
+        'minify' => true
+    ];
 
     /** @var array */
     private $columns = [];
@@ -129,7 +132,7 @@ final class EmbeddedLoader implements JoinableInterface
      */
     public function configureQuery(SelectQuery $query, array $outerKeys = []): SelectQuery
     {
-        if ($this->isLoaded()) {
+        if ($this->isLoaded() && $this->parent->isLoaded()) {
             $this->mountColumns($query, $this->options['minify'] ?? true);
         }
 
@@ -148,10 +151,12 @@ final class EmbeddedLoader implements JoinableInterface
 
         $typecast = $this->define(Schema::TYPECAST);
         if ($typecast !== null) {
-            $node->setTypecast(new Typecast(
-                $typecast,
-                $this->orm->getSource($this->parent->getTarget())->getDatabase()
-            ));
+            $node->setTypecast(
+                new Typecast(
+                    $typecast,
+                    $this->orm->getSource($this->parent->getTarget())->getDatabase()
+                )
+            );
         }
 
         return $node;

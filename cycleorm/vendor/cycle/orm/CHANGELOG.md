@@ -1,5 +1,24 @@
 # CHANGELOG 
 
+v1.2.3 (07.02.2020)
+--------------------
+- bumped PHPUnit version to 8
+- removed Travis tests
+- added GitHub Actions
+- suppressed PK introspection on Postgres insert queries 
+
+v1.2.2 (29.01.2020)
+--------------------
+- added the support for custom default sources, repositories and mappers by @mrakolice 
+
+v1.2.1 (16.01.2020)
+--------------------
+- [bugfix] embedded relations data was loaded with parent entity even when not required
+- simplified query builder creation within joinable loader
+- added support for callable `load` option (where alternative) for all relations
+- added support for where in all relations
+- code-style changes (optimizations)
+
 v1.2.0 (13.01.2020)
 --------------------
 - performance optimizations in Node parsers, Select builder, Typecast

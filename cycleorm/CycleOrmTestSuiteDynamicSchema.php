@@ -1,23 +1,17 @@
 <?php
 
 require_once __DIR__ . '/../AbstractTestSuite.php';
+require_once __DIR__ . '/CycleOrmTestSuite.php';
 
 use Cycle\ORM;
 use Spiral\Database;
 
-class CycleOrmTestSuite extends AbstractTestSuite
+class CycleOrmTestSuiteDynamicSchema extends CycleOrmTestSuite
 {
-    protected const PRODUCT_MAPPER  = ORM\Mapper\Mapper::class;
-    protected const CATEGORY_MAPPER = ORM\Mapper\Mapper::class;
-    protected const TAG_MAPPER      = ORM\Mapper\Mapper::class;
-    protected const IMAGE_MAPPER    = ORM\Mapper\Mapper::class;
-
-    protected $orm;
-
-    protected $transaction;
-
-    /** @var ORM\Select\Repository */
-    protected $productRepository;
+    protected const PRODUCT_MAPPER  = \Cycle\ORM\Mapper\StdMapper::class;
+    protected const CATEGORY_MAPPER = \Cycle\ORM\Mapper\StdMapper::class;
+    protected const TAG_MAPPER      = \Cycle\ORM\Mapper\StdMapper::class;
+    protected const IMAGE_MAPPER    = \Cycle\ORM\Mapper\StdMapper::class;
 
     public function initialize()
     {
@@ -51,7 +45,6 @@ class CycleOrmTestSuite extends AbstractTestSuite
                 [
                     'product'     => [
                         ORM\Schema::MAPPER      => static::PRODUCT_MAPPER,
-                        ORM\Schema::ENTITY      => Product::class,
                         ORM\Schema::DATABASE    => 'default',
                         ORM\Schema::TABLE       => 'products',
                         ORM\Schema::PRIMARY_KEY => 'id',
@@ -104,7 +97,6 @@ class CycleOrmTestSuite extends AbstractTestSuite
                     ],
                     'category'    => [
                         ORM\Schema::MAPPER      => static::CATEGORY_MAPPER,
-                        ORM\Schema::ENTITY      => Category::class,
                         ORM\Schema::DATABASE    => 'default',
                         ORM\Schema::TABLE       => 'categories',
                         ORM\Schema::PRIMARY_KEY => 'id',
@@ -121,7 +113,6 @@ class CycleOrmTestSuite extends AbstractTestSuite
                     ],
                     'tag'         => [
                         ORM\Schema::MAPPER      => static::TAG_MAPPER,
-                        ORM\Schema::ENTITY      => Tag::class,
                         ORM\Schema::DATABASE    => 'default',
                         ORM\Schema::TABLE       => 'tags',
                         ORM\Schema::PRIMARY_KEY => 'id',
@@ -156,7 +147,6 @@ class CycleOrmTestSuite extends AbstractTestSuite
                     ],
                     'image'       => [
                         ORM\Schema::MAPPER      => static::IMAGE_MAPPER,
-                        ORM\Schema::ENTITY      => Image::class,
                         ORM\Schema::DATABASE    => 'default',
                         ORM\Schema::TABLE       => 'images',
                         ORM\Schema::PRIMARY_KEY => 'id',
@@ -182,103 +172,31 @@ class CycleOrmTestSuite extends AbstractTestSuite
         $this->productRepository = $orm->getRepository('product');
     }
 
-    public function clearCache()
-    {
-    }
-
-    public function initTables()
-    {
-        try {
-            $this->con->execute('DROP TABLE [products]');
-            $this->con->execute('DROP TABLE [products_tags]');
-            $this->con->execute('DROP TABLE [tags]');
-            $this->con->execute('DROP TABLE [categories]');
-            $this->con->execute('DROP TABLE [images]');
-        } catch (\Exception $e) {
-            // do nothing - the tables probably don't exist yet
-        }
-        $this->con->execute(
-            'CREATE TABLE [products]
-		(
-			[id] INTEGER  NOT NULL PRIMARY KEY,
-			[name] VARCHAR(255)  NOT NULL,
-			[sku] VARCHAR(24)  NOT NULL,
-			[price] FLOAT,
-			[category_id] INTEGER,
-			FOREIGN KEY (category_id) REFERENCES categories(id)
-		)'
-        );
-        $this->con->execute(
-            'CREATE TABLE [categories]
-		(
-			[id] INTEGER  NOT NULL PRIMARY KEY,
-			[name] VARCHAR(128)  NOT NULL
-		)'
-        );
-        $this->con->execute(
-            'CREATE TABLE [images]
-		(
-			[id] INTEGER  NOT NULL PRIMARY KEY,
-			[imageable_id] INTEGER,
-			[imageable_type] VARCHAR(128),
-			[path] VARCHAR(128)  NOT NULL
-		)'
-        );
-        $this->con->execute(
-            'CREATE TABLE [tags]
-		(
-			[id] INTEGER  NOT NULL PRIMARY KEY,
-			[name] VARCHAR(128)  NOT NULL
-		)'
-        );
-        $this->con->execute(
-            'CREATE TABLE [products_tags]
-		(
-			[id] INTEGER  NOT NULL PRIMARY KEY,
-			[product_id] INTEGER,
-			[tag_id] INTEGER,
-			[position] INTEGER
-		)'
-        );
-    }
-
-    public function beginTransaction()
-    {
-    }
-
-    public function commit()
-    {
-        $this->transaction->run();
-    }
-
     function insert($i)
     {
-        $product = new Product(
+        $product = $this->orm->make(
+            'product',
             [
                 'name'  => 'Product #' . $i,
                 'sku'   => 'SKU #' . $i,
                 'price' => sqrt(1000 + $i * 100)
             ]
         );
-        $product->category = new Category(
+
+        $product->category = $this->orm->make('category', ['name' => 'Category #c' . $i]);
+
+        $product->images = new \Doctrine\Common\Collections\ArrayCollection(
             [
-                'name' => 'Category #c' . $i
-            ]
-        );
-        $product->images = new \Doctrine\Common\Collections\ArrayCollection( // to be improved
-            [
-                new Image(
-                    [
-                        'path' => 'image_' . $i . '.jpg'
-                    ]
-                )
+                $this->orm->make('image', ['path' => 'image_' . $i . '.jpg'])
             ]
         );
 
-        $product->tags = new \Doctrine\Common\Collections\ArrayCollection( // to be improved
+        $product->images->add($this->orm->make('image', ['path' => 'image_' . $i . '.jpg']));
+
+        $product->tags = new \Doctrine\Common\Collections\ArrayCollection(
             [
-                new Tag(['name' => 'Tag #t1_' . $i]),
-                new Tag(['name' => 'Tag #t2_' . $i])
+                $this->orm->make('tag', ['name' => 'Tag #t1_' . $i]),
+                $this->orm->make('tag', ['name' => 'Tag #t2_' . $i])
             ]
         );
 
@@ -291,109 +209,5 @@ class CycleOrmTestSuite extends AbstractTestSuite
         $this->orm->getHeap()->clean();
 
         return $product;
-    }
-
-    public function test_insert()
-    {
-        $product = $this->insert(0);
-
-        $product = $this->productRepository->findByPK($product->id);
-
-        $this->assertNotNull($product, 'Product not found');
-        $this->assertNotNull($product->category_id, 'Category was not associated with the product');
-        $this->assertNotNull($product->images[0]->path, 'Image not present');
-        $this->assertNotNull($product->tags[0]->name, 'Tag not present');
-    }
-
-    function prepare_update()
-    {
-        $this->product = $this->productRepository->findByPK(1);
-    }
-
-    function update($i)
-    {
-        $this->product->name = 'New product name ' . $i;
-        $this->product->category->name = 'New category name ' . $i;
-        $this->product->images[0]->path = 'new_path_' . $i . '.jpg';
-        $this->product->tags[0]->name = 'New tag name ' . $i;
-
-        $this->transaction->persist($this->product);
-        $this->transaction->run();
-    }
-
-    function test_update()
-    {
-        $this->product->name = 'New product name';
-        $this->product->category->name = 'New category name';
-        $this->product->images[0]->path = 'new_path.jpg';
-        $this->product->tags[0]->name = 'New tag name';
-
-        $this->transaction->persist($this->product);
-        $this->transaction->run();
-
-        $product = $this->productRepository->findByPK(1);
-
-        $this->assertEquals('New product name', $product->name);
-        $this->assertEquals('New category name', $product->category->name);
-        $this->assertEquals('new_path.jpg', $product->images[0]->path);
-        $this->assertEquals('New tag name', $product->tags[0]->name);
-        $this->assertEquals('Tag #t2_0', $product->tags[1]->name);
-    }
-
-    function find($i)
-    {
-        $product = $this->productRepository->findByPK(1);
-    }
-
-    function test_find()
-    {
-        $product = $this->productRepository->findByPK(1);
-        $this->assertEquals('New product name ' . (self::NB_TEST - 1), $product->name); // changed by "update"
-    }
-
-    function complexQuery($i)
-    {
-        $this->productRepository
-            ->select()
-            ->with('category')
-            ->where('product.id', '>', 50)
-            ->where('category.id', '<', 300)
-            ->count('*');
-    }
-
-    function test_complexQuery()
-    {
-        $count = $this->productRepository
-            ->select()
-            ->where('product.id', '>', 50)
-            ->where('category.id', '<', 300) // with can be ommited, orm will join automatically
-            ->count('*');
-
-        $this->assertEquals(249, $count);
-    }
-
-    function relations($i)
-    {
-        $products = $this->productRepository
-            ->select()
-            ->load(['category', 'tags', 'images'])
-            ->where('price', '>', 50)
-            ->limit(10)
-            ->fetchAll();
-
-        foreach ($products as $product) {
-        }
-    }
-
-    function test_relations()
-    {
-        $product = $this->productRepository->findByPK(1);
-
-        $lastRun = self::NB_TEST - 1;
-        $this->assertEquals('New product name ' . $lastRun, $product->name);
-        $this->assertEquals('New category name ' . $lastRun, $product->category->name);
-        $this->assertEquals('new_path_' . $lastRun . '.jpg', $product->images[0]->path);
-        $this->assertEquals('New tag name ' . $lastRun, $product->tags[0]->name);
-        $this->assertEquals('Tag #t2_0', $product->tags[1]->name);
     }
 }

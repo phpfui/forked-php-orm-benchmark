@@ -27,6 +27,9 @@ class PostgresInsertQuery extends InsertQuery
     /** @var PostgresDriver */
     protected $driver;
 
+    /** @var string|null */
+    protected $returning;
+
     /**
      * @param DriverInterface $driver
      * @param string|null     $prefix
@@ -44,6 +47,19 @@ class PostgresInsertQuery extends InsertQuery
     }
 
     /**
+     * Set returning column. If not set, the driver will detect PK automatically.
+     *
+     * @param string $column
+     * @return $this
+     */
+    public function returning(string $column): self
+    {
+        $this->returning = $column;
+
+        return $this;
+    }
+
+    /**
      * @return int|string|null
      */
     public function run()
@@ -54,7 +70,7 @@ class PostgresInsertQuery extends InsertQuery
         $result = $this->driver->query($queryString, $params->getParameters());
 
         try {
-            if ($this->driver->getPrimaryKey($this->prefix, $this->table) !== null) {
+            if ($this->getPrimaryKey() !== null) {
                 return $result->fetchColumn();
             }
 
@@ -69,19 +85,28 @@ class PostgresInsertQuery extends InsertQuery
      */
     public function getTokens(): array
     {
-        $primaryKey = null;
-        if ($this->driver !== null && $this->table !== null) {
-            try {
-                $primaryKey = $this->driver->getPrimaryKey($this->prefix, $this->table);
-            } catch (Throwable $e) {
-            }
-        }
-
         return [
             'table'   => $this->table,
-            'return'  => $primaryKey,
+            'return'  => $this->getPrimaryKey(),
             'columns' => $this->columns,
             'values'  => $this->values
         ];
+    }
+
+    /**
+     * @return string
+     */
+    private function getPrimaryKey(): ?string
+    {
+        $primaryKey = $this->returning;
+        if ($primaryKey === null && $this->driver !== null && $this->table !== null) {
+            try {
+                $primaryKey = $this->driver->getPrimaryKey($this->prefix, $this->table);
+            } catch (Throwable $e) {
+                return null;
+            }
+        }
+
+        return $primaryKey;
     }
 }
