@@ -7,9 +7,10 @@ use Sirius\Orm\Action\BaseAction;
 use Sirius\Orm\Action\Delete;
 use Sirius\Orm\Action\Insert;
 use Sirius\Orm\Action\Update;
-use Sirius\Orm\Behaviours\BehaviourInterface;
+use Sirius\Orm\Behaviour\BehaviourInterface;
 use Sirius\Orm\Collection\Collection;
 use Sirius\Orm\Collection\PaginatedCollection;
+use Sirius\Orm\Entity\Behaviours;
 use Sirius\Orm\Entity\EntityInterface;
 use Sirius\Orm\Entity\GenericEntity;
 use Sirius\Orm\Entity\GenericEntityHydrator;
@@ -19,7 +20,9 @@ use Sirius\Orm\Entity\Tracker;
 use Sirius\Orm\Helpers\Arr;
 use Sirius\Orm\Helpers\Inflector;
 use Sirius\Orm\Helpers\QueryHelper;
+use Sirius\Orm\Relation\Aggregate;
 use Sirius\Orm\Relation\Relation;
+use Sirius\Orm\Relation\RelationConfig;
 
 /**
  * @method array where($column, $value, $condition)
@@ -87,10 +90,9 @@ class Mapper
     protected $entityDefaultAttributes = [];
 
     /**
-     * List of behaviours to be attached to the mapper
-     * @var array[BehaviourInterface]
+     * @var Behaviours
      */
-    protected $behaviours = [];
+    protected $behaviours;
 
     /**
      * @var array
@@ -117,11 +119,6 @@ class Mapper
      */
     protected $orm;
 
-    /**
-     * @var Query
-     */
-    private $queryPrototype;
-
     public static function make(Orm $orm, MapperConfig $mapperConfig)
     {
         $mapper                          = new static($orm, $mapperConfig->entityHydrator);
@@ -135,7 +132,11 @@ class Mapper
         $mapper->guards                  = $mapperConfig->guards;
         $mapper->tableReference          = QueryHelper::reference($mapper->table, $mapper->tableAlias);
 
-        if ($mapperConfig->relations) {
+        if (isset($mapperConfig->casts) && !empty($mapperConfig->casts)) {
+            $mapper->casts = $mapperConfig->casts;
+        }
+
+        if (!empty($mapperConfig->relations)) {
             $mapper->relations = array_merge($mapper->relations, $mapperConfig->relations);
         }
 
@@ -143,7 +144,7 @@ class Mapper
             $mapper->entityClass = $mapperConfig->entityClass;
         }
 
-        if ($mapperConfig->behaviours && ! empty($mapperConfig->behaviours)) {
+        if (isset($mapperConfig->behaviours) && ! empty($mapperConfig->behaviours)) {
             $mapper->use(...$mapperConfig->behaviours);
         }
 
@@ -153,19 +154,25 @@ class Mapper
     public function __construct(Orm $orm, HydratorInterface $entityHydrator = null, QueryBuilder $queryBuilder = null)
     {
         $this->orm = $orm;
+
         if (! $entityHydrator) {
-            $entityHydrator = new GenericEntityHydrator($orm, $this);
-        }
-        if (! $queryBuilder) {
-            $this->queryBuilder = QueryBuilder::getInstance();
+            $entityHydrator = new GenericEntityHydrator();
+            $entityHydrator->setMapper($this);
+            $entityHydrator->setCastingManager($orm->getCastingManager());
         }
         $this->entityHydrator = $entityHydrator;
-        $this->tableReference = QueryHelper::reference($this->table, $this->tableAlias);
+
+        if (! $queryBuilder) {
+            $queryBuilder = QueryBuilder::getInstance();
+        }
+        $this->queryBuilder = $queryBuilder;
+        $this->behaviours = new Behaviours();
     }
 
     public function __call(string $method, array $params)
     {
         switch ($method) {
+            case 'where':
             case 'where':
             case 'columns':
             case 'orderBy':
@@ -185,29 +192,15 @@ class Mapper
      */
     public function use(...$behaviours)
     {
-        if (empty($behaviours)) {
-            return;
-        }
         foreach ($behaviours as $behaviour) {
-            /** @var $behaviour BehaviourInterface */
-            if (isset($this->behaviours[$behaviour->getName()])) {
-                throw new \BadMethodCallException(
-                    sprintf('Behaviour "%s" is already registered', $behaviour->getName())
-                );
-            }
-            $this->behaviours[$behaviour->getName()] = $behaviour;
+            $this->behaviours->add($behaviour);
         }
     }
 
     public function without(...$behaviours)
     {
-        if (empty($behaviours)) {
-            return $this;
-        }
         $mapper = clone $this;
-        foreach ($behaviours as $behaviour) {
-            unset($mapper->behaviours[$behaviour]);
-        }
+        $mapper->behaviours = $this->behaviours->without(...$behaviours);
 
         return $mapper;
     }
@@ -227,23 +220,23 @@ class Mapper
         $mapper = $this;
 
         $singular = Inflector::singularize($this->getTableAlias(true));
-        $castingManager->register($singular, function ($value) use ($mapper, $castingManager) {
+        $castingManager->register($singular, function ($value) use ($mapper) {
             if ($value instanceof $this->entityClass) {
                 return $value;
             }
 
-            return $value !== null ? $mapper->newEntity($value, $castingManager) : null;
+            return $value !== null ? $mapper->newEntity($value) : null;
         });
 
         $plural = $this->getTableAlias(true);
-        $castingManager->register($plural, function ($values) use ($mapper, $castingManager) {
+        $castingManager->register($plural, function ($values) use ($mapper) {
             if ($values instanceof Collection) {
                 return $values;
             }
             $collection = new Collection();
             if (is_array($values)) {
                 foreach ($values as $value) {
-                    $collection->add($mapper->newEntity($value, $castingManager));
+                    $collection->add($mapper->newEntity($value));
                 }
             }
 
@@ -277,6 +270,10 @@ class Mapper
 
     public function getTableReference()
     {
+        if (!$this->tableReference) {
+            $this->tableReference = QueryHelper::reference($this->table, $this->tableAlias);
+        }
+
         return $this->tableReference;
     }
 
@@ -321,14 +318,14 @@ class Mapper
     {
         $entity = $this->entityHydrator->hydrate(array_merge($this->getEntityDefaults(), $data));
 
-        return $this->applyBehaviours(__FUNCTION__, $entity);
+        return $this->behaviours->apply($this, __FUNCTION__, $entity);
     }
 
     public function extractFromEntity(EntityInterface $entity): array
     {
         $data = $this->entityHydrator->extract($entity);
 
-        return $this->applyBehaviours(__FUNCTION__, $data);
+        return $this->behaviours->apply($this, __FUNCTION__, $data);
     }
 
     public function newEntityFromRow(array $data = null, array $load = [], Tracker $tracker = null)
@@ -340,18 +337,16 @@ class Mapper
         $receivedTracker = ! ! $tracker;
         if (! $tracker) {
             $receivedTracker = false;
-            $tracker         = new Tracker($this, [$data]);
+            $tracker         = new Tracker([$data]);
         }
 
         $entity = $this->newEntity($data);
         $this->injectRelations($entity, $tracker, $load);
+        $this->injectAggregates($entity, $tracker, $load);
         $entity->setPersistenceState(StateEnum::SYNCHRONIZED);
 
         if (! $receivedTracker) {
             $tracker->replaceRows([$entity]);
-            if ($tracker->isDisposable()) {
-                unset($tracker);
-            }
         }
 
         return $entity;
@@ -360,15 +355,12 @@ class Mapper
     public function newCollectionFromRows(array $rows, array $load = []): Collection
     {
         $entities = [];
-        $tracker  = new Tracker($this, $rows);
+        $tracker  = new Tracker($rows);
         foreach ($rows as $row) {
             $entity     = $this->newEntityFromRow($row, $load, $tracker);
             $entities[] = $entity;
         }
         $tracker->replaceRows($entities);
-        if ($tracker->isDisposable()) {
-            unset($tracker);
-        }
 
         return new Collection($entities);
     }
@@ -381,40 +373,52 @@ class Mapper
         array $load = []
     ): PaginatedCollection {
         $entities = [];
-        $tracker  = new Tracker($this, $rows);
+        $tracker  = new Tracker($rows);
         foreach ($rows as $row) {
             $entity     = $this->newEntityFromRow($row, $load, $tracker);
             $entities[] = $entity;
         }
         $tracker->replaceRows($entities);
-        if ($tracker->isDisposable()) {
-            unset($tracker);
-        }
 
         return new PaginatedCollection($entities, $totalCount, $perPage, $currentPage);
     }
 
     protected function injectRelations(EntityInterface $entity, Tracker $tracker, array $eagerLoad = [])
     {
-        $trackerIdDisposable = true;
         foreach (array_keys($this->relations) as $name) {
             $relation      = $this->getRelation($name);
             $queryCallback = $eagerLoad[$name] ?? null;
             $nextLoad      = Arr::getChildren($eagerLoad, $name);
 
             if (! $tracker->hasRelation($name)) {
-                $tracker->setRelation($name, $relation, $queryCallback);
+                $tracker->setRelation($name, $relation, $queryCallback, $nextLoad);
             }
 
-            if (array_key_exists($name, $eagerLoad) || $relation->isEagerLoad()) {
-                $relation->attachMatchesToEntity($entity, $tracker->getRelationResults($name));
+            if (array_key_exists($name, $eagerLoad) || in_array($name, $eagerLoad) || $relation->isEagerLoad()) {
+                $relation->attachMatchesToEntity($entity, $tracker->getResultsForRelation($name));
             } elseif ($relation->isLazyLoad()) {
-                $trackerIdDisposable = false;
-                $relation->attachLazyValueToEntity($entity, $tracker);
+                $relation->attachLazyRelationToEntity($entity, $tracker);
             }
         }
+    }
 
-        $tracker->setDisposable($trackerIdDisposable);
+    protected function injectAggregates(EntityInterface $entity, Tracker $tracker, array $eagerLoad = [])
+    {
+        foreach (array_keys($this->relations) as $name) {
+            $relation      = $this->getRelation($name);
+            if (!method_exists($relation, 'getAggregates')) {
+                continue;
+            }
+            $aggregates = $relation->getAggregates();
+            foreach ($aggregates as $aggName => $aggregate) {
+                /** @var $aggregate Aggregate */
+                if (array_key_exists($aggName, $eagerLoad) || $aggregate->isEagerLoad()) {
+                    $aggregate->attachAggregateToEntity($entity, $tracker->getAggregateResults($aggregate));
+                } elseif ($aggregate->isLazyLoad()) {
+                    $aggregate->attachLazyAggregateToEntity($entity, $tracker);
+                }
+            }
+        }
     }
 
     protected function getEntityDefaults()
@@ -430,6 +434,17 @@ class Mapper
     public function getEntityAttribute(EntityInterface $entity, $attribute)
     {
         return $entity->get($attribute);
+    }
+
+    public function addRelation($name, $relation)
+    {
+        if (is_array($relation) || $relation instanceof Relation) {
+            $this->relations[$name] = $relation;
+            return;
+        }
+        throw new \InvalidArgumentException(
+            sprintf('The relation has to be an Relation instance or an array of configuration options')
+        );
     }
 
     public function hasRelation($name): bool
@@ -463,7 +478,7 @@ class Mapper
     {
         $query = $this->queryBuilder->newQuery($this);
 
-        return $this->applyBehaviours(__FUNCTION__, $query);
+        return $this->behaviours->apply($this, __FUNCTION__, $query);
     }
 
     public function find($pk, array $load = [])
@@ -490,23 +505,24 @@ class Mapper
         try {
             $action->run();
             $this->getWriteConnection()->commit();
-
+            $this->orm->getConnectionLocator()->lockToWrite(false);
             return true;
         } catch (\Exception $e) {
             $this->getWriteConnection()->rollBack();
+            $this->orm->getConnectionLocator()->lockToWrite(false);
             throw $e;
         }
     }
 
-    public function newSaveAction(EntityInterface $entity, $options): BaseAction
+    public function newSaveAction(EntityInterface $entity, $options): Update
     {
-        if (! $entity->getPk()) {
+        if (! $this->getEntityAttribute($entity, $this->primaryKey)) {
             $action = new Insert($this, $entity, $options);
         } else {
             $action = new Update($this, $entity, $options);
         }
 
-        return $this->applyBehaviours('save', $action);
+        return $this->behaviours->apply($this, 'save', $action);
     }
 
     public function delete(EntityInterface $entity, $withRelations = true)
@@ -532,7 +548,7 @@ class Mapper
     {
         $action = new Delete($this, $entity, $options);
 
-        return $this->applyBehaviours('delete', $action);
+        return $this->behaviours->apply($this, 'delete', $action);
     }
 
     protected function assertCanPersistEntity($entity)
@@ -545,18 +561,6 @@ class Mapper
                 get_class($entity)
             ));
         }
-    }
-
-    protected function applyBehaviours($target, $result, ...$args)
-    {
-        foreach ($this->behaviours as $behaviour) {
-            $method = 'on' . Helpers\Str::className($target);
-            if (method_exists($behaviour, $method)) {
-                $result = $behaviour->{$method}($this, $result, ...$args);
-            }
-        }
-
-        return $result;
     }
 
     public function getReadConnection()

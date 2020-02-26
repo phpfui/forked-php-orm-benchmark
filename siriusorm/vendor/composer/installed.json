@@ -122,17 +122,17 @@
     },
     {
         "name": "siriusphp/orm",
-        "version": "0.9.0",
-        "version_normalized": "0.9.0.0",
+        "version": "1.0.0",
+        "version_normalized": "1.0.0.0",
         "source": {
             "type": "git",
             "url": "https://github.com/siriusphp/orm.git",
-            "reference": "e550593d599c02d6a728e1107f115e642981846c"
+            "reference": "33c6fc6df193efaeffdd9d8ef9a27121d04215af"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/siriusphp/orm/zipball/e550593d599c02d6a728e1107f115e642981846c",
-            "reference": "e550593d599c02d6a728e1107f115e642981846c",
+            "url": "https://api.github.com/repos/siriusphp/orm/zipball/33c6fc6df193efaeffdd9d8ef9a27121d04215af",
+            "reference": "33c6fc6df193efaeffdd9d8ef9a27121d04215af",
             "shasum": ""
         },
         "require": {
@@ -146,7 +146,7 @@
             "mockery/mockery": "^1.3",
             "phpunit/phpunit": "^8.5"
         },
-        "time": "2020-02-21T12:25:29+00:00",
+        "time": "2020-02-26T10:53:58+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {

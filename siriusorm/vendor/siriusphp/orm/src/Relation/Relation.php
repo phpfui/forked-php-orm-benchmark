@@ -9,11 +9,10 @@ use Sirius\Orm\Action\Delete;
 use Sirius\Orm\Action\DetachEntities;
 use Sirius\Orm\Action\Update;
 use Sirius\Orm\Entity\EntityInterface;
-use Sirius\Orm\Entity\LazyValueLoader;
+use Sirius\Orm\Entity\LazyRelation;
 use Sirius\Orm\Entity\Tracker;
 use Sirius\Orm\Helpers\Arr;
 use Sirius\Orm\Helpers\QueryHelper;
-use Sirius\Orm\LazyLoader;
 use Sirius\Orm\Mapper;
 use Sirius\Orm\Query;
 use Sirius\Sql\Select;
@@ -79,6 +78,14 @@ abstract class Relation
     }
 
     /**
+     * @return array
+     */
+    public function getKeyPairs(): array
+    {
+        return $this->keyPairs;
+    }
+
+    /**
      * Checks if a native entity belongs and a foreign entity belong together according to this relation
      * It verifies if the attributes are properly linked
      *
@@ -89,6 +96,9 @@ abstract class Relation
      */
     public function entitiesBelongTogether(EntityInterface $nativeEntity, EntityInterface $foreignEntity)
     {
+        /**
+         * @todo make this method protected
+         */
         foreach ($this->keyPairs as $nativeCol => $foreignCol) {
             $nativeKeyValue  = $this->nativeMapper->getEntityAttribute($nativeEntity, $nativeCol);
             $foreignKeyValue = $this->foreignMapper->getEntityAttribute($foreignEntity, $foreignCol);
@@ -119,24 +129,20 @@ abstract class Relation
 
     protected function getKeyColumn($name, $column)
     {
-        if (is_array($column)) {
-            $keyColumn = [];
-            foreach ($column as $col) {
-                $keyColumn[] = $name . '_' . $col;
-            }
-
-            return $keyColumn;
+        if (!is_array($column)) {
+            return $name . '_' . $column;
         }
 
-        return $name . '_' . $column;
+        $keyColumn = [];
+        foreach ($column as $col) {
+            $keyColumn[] = $name . '_' . $col;
+        }
+
+        return $keyColumn;
     }
 
     public function addActions(BaseAction $action)
     {
-        if (! $this->cascadeIsAllowedForAction($action)) {
-            return;
-        }
-
         if ($action instanceof Delete) {
             $this->addActionOnDelete($action);
         } elseif ($action instanceof Insert || $action instanceof Update) {
@@ -144,15 +150,21 @@ abstract class Relation
         }
     }
 
+    abstract protected function addActionOnSave(BaseAction $action);
+
+    abstract protected function addActionOnDelete(BaseAction $action);
+
     abstract public function attachMatchesToEntity(EntityInterface $nativeEntity, array $queryResult);
+
+    abstract public function attachEntities(EntityInterface $nativeEntity, EntityInterface $foreignEntity);
 
     abstract public function detachEntities(EntityInterface $nativeEntity, EntityInterface $foreignEntity);
 
     abstract public function joinSubselect(Query $query, string $reference);
 
-    public function attachLazyValueToEntity(EntityInterface $entity, Tracker $tracker)
+    public function attachLazyRelationToEntity(EntityInterface $entity, Tracker $tracker)
     {
-        $valueLoader = new LazyValueLoader($entity, $tracker, $this);
+        $valueLoader = new LazyRelation($entity, $tracker, $this);
         $this->nativeMapper->setEntityAttribute($entity, $this->name, $valueLoader);
     }
 
@@ -170,6 +182,30 @@ abstract class Relation
         $query = $this->applyForeignGuards($query);
 
         return $query;
+    }
+
+    public function indexQueryResults(array $entities)
+    {
+        $result = [];
+
+        foreach ($entities as $entity) {
+            $entityId = $this->getEntityId($this->foreignMapper, $entity, array_values($this->keyPairs));
+            if (!isset($result[$entityId])) {
+                $result[$entityId] = [];
+            }
+            $result[$entityId][] = $entity;
+        }
+
+        return $result;
+    }
+
+    protected function getEntityId(Mapper $mapper, EntityInterface $entity, array $keyColumns)
+    {
+        $entityKeys = [];
+        foreach ($keyColumns as $col) {
+            $entityKeys[] = $mapper->getEntityAttribute($entity, $col);
+        }
+        return implode('-', $entityKeys);
     }
 
     /**
@@ -190,22 +226,6 @@ abstract class Relation
     }
 
     /**
-     * @param BaseAction $action
-     *
-     * @return bool|mixed|null
-     * @see BaseAction::$options
-     */
-    protected function cascadeIsAllowedForAction(BaseAction $action)
-    {
-        $relations = $action->getOption('relations');
-        if (is_array($relations) && ! in_array($this->name, $relations)) {
-            return false;
-        }
-
-        return $relations;
-    }
-
-    /**
      * Computes the $withRelations value to be passed on to the next related entities
      * If an entity receives on delete/save $withRelations = ['category', 'category.images']
      * the related 'category' is saved with $withRelations = ['images']
@@ -220,9 +240,14 @@ abstract class Relation
             return $relations;
         }
 
-        $children = Arr::getChildren(array_combine($relations, $relations), $this->name);
+        $arr = array_combine($relations, $relations);
+        if (is_array($arr)) {
+            $children = Arr::getChildren($arr, $this->name);
 
-        return array_keys($children);
+            return array_keys($children);
+        }
+
+        return [];
     }
 
     protected function getExtraColumnsForAction()
@@ -292,7 +317,7 @@ abstract class Relation
         return QueryHelper::joinCondition(
             $this->nativeMapper->getTableAlias(true),
             $this->getOption(RelationConfig::NATIVE_KEY),
-            $this->foreignMapper->getTableAlias(true),
+            $this->name,
             $this->getOption(RelationConfig::FOREIGN_KEY)
         );
     }

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "006fe11f10fae6f2b7e018d384d8e004",
+    "content-hash": "343adfb4c92155e0c94c857a1bc1f7a0",
     "packages": [
         {
             "name": "atlas/pdo",
@@ -125,16 +125,16 @@
         },
         {
             "name": "siriusphp/orm",
-            "version": "0.9.0",
+            "version": "1.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/siriusphp/orm.git",
-                "reference": "e550593d599c02d6a728e1107f115e642981846c"
+                "reference": "33c6fc6df193efaeffdd9d8ef9a27121d04215af"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/siriusphp/orm/zipball/e550593d599c02d6a728e1107f115e642981846c",
-                "reference": "e550593d599c02d6a728e1107f115e642981846c",
+                "url": "https://api.github.com/repos/siriusphp/orm/zipball/33c6fc6df193efaeffdd9d8ef9a27121d04215af",
+                "reference": "33c6fc6df193efaeffdd9d8ef9a27121d04215af",
                 "shasum": ""
             },
             "require": {
@@ -176,7 +176,7 @@
                 "pdo",
                 "sql"
             ],
-            "time": "2020-02-21T12:25:29+00:00"
+            "time": "2020-02-26T10:53:58+00:00"
         },
         {
             "name": "siriusphp/sql",

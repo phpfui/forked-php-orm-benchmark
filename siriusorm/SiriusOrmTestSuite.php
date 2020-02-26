@@ -1,7 +1,7 @@
 <?php
 
 
-use Atlas\Pdo\Connection;
+use Sirius\Orm\Connection;
 use Sirius\Orm\ConnectionLocator;
 use Sirius\Orm\Mapper;
 use Sirius\Orm\MapperConfig;

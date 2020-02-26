@@ -10,6 +10,23 @@ use Sirius\Orm\Relation\RelationConfig;
 
 class AttachEntities implements ActionInterface
 {
+    /**
+     * @var EntityInterface
+     */
+    protected $nativeEntity;
+    /**
+     * @var EntityInterface
+     */
+    protected $foreignEntity;
+    /**
+     * @var Relation
+     */
+    protected $relation;
+    /**
+     * @var string
+     */
+    protected $actionType;
+
     public function __construct(
         EntityInterface $nativeEntity,
         EntityInterface $foreignEntity,
@@ -34,7 +51,7 @@ class AttachEntities implements ActionInterface
         /**
          * @todo store current attribute values
          */
-        $this->relation->attachMatchesToEntity($this->nativeEntity, [$this->foreignEntity]);
+        $this->relation->attachEntities($this->nativeEntity, $this->foreignEntity);
         $this->maybeUpdatePivotRow();
     }
 
@@ -79,7 +96,9 @@ class AttachEntities implements ActionInterface
 
         $throughColumnPrefix = $this->relation->getOption(RelationConfig::THROUGH_COLUMNS_PREFIX);
         foreach ((array)$this->relation->getOption(RelationConfig::THROUGH_COLUMNS) as $col) {
-            $insertColumns[$col] = $this->foreignEntity->get("{$throughColumnPrefix}{$col}");
+            $insertColumns[$col] = $this->relation
+                ->getForeignMapper()
+                ->getEntityAttribute($this->foreignEntity, "{$throughColumnPrefix}{$col}");
         }
 
         foreach ((array)$this->relation->getOption(RelationConfig::THROUGH_GUARDS) as $col => $value) {

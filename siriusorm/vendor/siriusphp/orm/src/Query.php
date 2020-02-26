@@ -69,14 +69,15 @@ class Query extends Select
 
     public function load(...$relations): self
     {
-        foreach ($relations as $name => $callback) {
-            if (is_int($name)) {
-                $this->load[$callback] = null;
-            } elseif (is_callable($callback)) {
-                $this->load[$name] = $callback;
+        foreach ($relations as $relation) {
+            if (is_array($relation)) {
+                $name = key($relation);
+                $callback = current($relation);
             } else {
-                throw new \InvalidArgumentException('Invalid callable for relation');
+                $name = $relation;
+                $callback = null;
             }
+            $this->load[$name] = $callback;
         }
 
         return $this;
@@ -112,7 +113,10 @@ class Query extends Select
 
     public function get(): Collection
     {
-        return $this->mapper->newCollectionFromRows($this->fetchAll(), $this->load);
+        return $this->mapper->newCollectionFromRows(
+            $this->connection->fetchAll($this->getStatement(), $this->getBindValues()),
+            $this->load
+        );
     }
 
     public function paginate($perPage, $page): PaginatedCollection
@@ -131,9 +135,12 @@ class Query extends Select
         return $this->mapper->newPaginatedCollectionFromRows($this->fetchAll(), $total, $perPage, $page, $this->load);
     }
 
-    public function chunk($count, $callback)
+    /**
+     * @todo implement this feature
+     */
+    /*public function chunk($count, $callback)
     {
-    }
+    }*/
 
     public function count()
     {

@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace Sirius\Orm\Tests;
 
-use Atlas\Pdo\Connection;
+use Sirius\Orm\Connection;
 use PHPUnit\Framework\TestCase;
 use Sirius\Orm\ConnectionLocator;
 use Sirius\Orm\Orm;
@@ -20,6 +20,10 @@ class BaseTestCase extends TestCase
      * @var Connection
      */
     protected $connection;
+    /**
+     * @var \Atlas\Pdo\ConnectionLocator|ConnectionLocator
+     */
+    protected $connectionLocator;
 
     public function setUp(): void
     {
@@ -32,10 +36,12 @@ class BaseTestCase extends TestCase
         }
 
         $this->connection = $connection;
-        $connection->logQueries();
         $connectionLocator = ConnectionLocator::new($this->connection);
+        $this->connectionLocator = $connectionLocator;
         $this->orm         = new Orm($connectionLocator);
         $this->createTables(getenv('DB_ENGINE') ? getenv('DB_ENGINE') : 'generic');
+        $this->loadMappers();
+        $connectionLocator->logQueries();
     }
 
     public function createTables($fileName = 'generic')
@@ -51,6 +57,7 @@ class BaseTestCase extends TestCase
         $this->orm->register('tags', $this->getMapperConfig('tags'));
         $this->orm->register('categories', $this->getMapperConfig('categories'));
         $this->orm->register('products', $this->getMapperConfig('products'));
+        $this->orm->register('content_products', $this->getMapperConfig('content_products'));
 
     }
 
@@ -64,6 +71,11 @@ class BaseTestCase extends TestCase
         $insert = new Insert($this->connection);
         $insert->into($table)->columns($values);
         $this->connection->perform($insert->getStatement(), $insert->getBindValues());
+    }
+
+    public function assertExpectedQueries($expected)
+    {
+        $this->assertEquals($expected, count($this->connectionLocator->getQueries()));
     }
 
     public function assertRowDeleted($table, ...$conditions)

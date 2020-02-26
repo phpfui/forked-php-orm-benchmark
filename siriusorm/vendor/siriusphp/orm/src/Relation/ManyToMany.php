@@ -3,6 +3,7 @@
 namespace Sirius\Orm\Relation;
 
 use Sirius\Orm\Action\BaseAction;
+use Sirius\Orm\Action\DeletePivotRows;
 use Sirius\Orm\Collection\Collection;
 use Sirius\Orm\Entity\EntityInterface;
 use Sirius\Orm\Entity\StateEnum;
@@ -13,6 +14,8 @@ use Sirius\Orm\Query;
 
 class ManyToMany extends Relation
 {
+    use HasAggregates;
+
     protected function applyDefaults(): void
     {
         parent::applyDefaults();
@@ -108,7 +111,6 @@ class ManyToMany extends Relation
 
     public function joinSubselect(Query $query, string $reference)
     {
-        $tableRef  = $this->foreignMapper->getTableAlias(true);
         $subselect = $query->subSelectForJoinWith()
                            ->from($this->foreignMapper->getTable())
                            ->columns($this->foreignMapper->getTable() . '.*')
@@ -139,28 +141,26 @@ class ManyToMany extends Relation
 
     public function attachMatchesToEntity(EntityInterface $nativeEntity, array $result)
     {
-        $found = [];
-        foreach ($result as $foreignEntity) {
-            if ($this->entitiesBelongTogether($nativeEntity, $foreignEntity)) {
-                $found[] = $foreignEntity;
-                $this->attachEntities($nativeEntity, $foreignEntity);
-            }
-        }
+        $nativeId = $this->getEntityId($this->nativeMapper, $nativeEntity, array_keys($this->keyPairs));
 
-        if ($this->entityHasRelationLoaded($nativeEntity)) {
+        $found = $result[$nativeId] ?? [];
+
+        if (!empty($found) && $this->entityHasRelationLoaded($nativeEntity)) {
             /** @var Collection $collection */
             $collection = $this->nativeMapper->getEntityAttribute($nativeEntity, $this->name);
-            if (! $collection->contains($foreignEntity)) {
-                $collection->add($foreignEntity);
+            foreach ($found as $foreignEntity) {
+                if (! $collection->contains($foreignEntity)) {
+                    $collection->add($foreignEntity);
+                }
             }
         } else {
-            $found = new Collection($found);
-            $this->nativeMapper->setEntityAttribute($nativeEntity, $this->name, $found);
+            $this->nativeMapper->setEntityAttribute($nativeEntity, $this->name, new Collection($found));
         }
     }
 
     protected function entityHasRelationLoaded(EntityInterface $entity)
     {
+        // lazy loaded relations are not included in `getArrayCopy()`
         return array_key_exists($this->name, $entity->getArrayCopy());
     }
 
@@ -193,7 +193,6 @@ class ManyToMany extends Relation
     protected function addActionOnDelete(BaseAction $action)
     {
         $nativeEntity       = $action->getEntity();
-        $nativeEntityKey    = $nativeEntity->getPk();
         $remainingRelations = $this->getRemainingRelations($action->getOption('relations'));
 
         // no cascade delete? treat as save so we can process the changes
@@ -202,13 +201,15 @@ class ManyToMany extends Relation
         } else {
             // retrieve them again from the DB since the related collection might not have everything
             // for example due to a relation query callback
-            $foreignEntities = $this->getQuery(new Tracker($this->nativeMapper, [$nativeEntity->getArrayCopy()]))
+            $foreignEntities = $this->getQuery(new Tracker([$nativeEntity->getArrayCopy()]))
                                     ->get();
 
             foreach ($foreignEntities as $entity) {
                 $deleteAction = $this->foreignMapper
                     ->newDeleteAction($entity, ['relations' => $remainingRelations]);
                 $action->append($deleteAction);
+                $deletePivotAction = new DeletePivotRows($this, $nativeEntity, $entity);
+                $action->append($deletePivotAction);
             }
         }
     }
@@ -217,7 +218,6 @@ class ManyToMany extends Relation
     {
         $remainingRelations = $this->getRemainingRelations($action->getOption('relations'));
 
-        /** @var Collection $foreignEntities */
         $foreignEntities = $this->nativeMapper->getEntityAttribute($action->getEntity(), $this->name);
         if (! $foreignEntities) {
             return;

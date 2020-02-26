@@ -1,5 +1,5 @@
 {
     "require": {
-        "siriusphp/orm": "^0.9.0"
+        "siriusphp/orm": "^1.0.0"
     }
 }

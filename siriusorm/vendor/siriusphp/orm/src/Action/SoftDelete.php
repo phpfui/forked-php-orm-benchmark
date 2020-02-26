@@ -7,8 +7,10 @@ use Sirius\Orm\Entity\StateEnum;
 
 class SoftDelete extends Delete
 {
-    private $entityId;
-    private $entityState;
+    /**
+     * @var int
+     */
+    protected $now;
 
     protected function execute()
     {
@@ -26,11 +28,6 @@ class SoftDelete extends Delete
                ])
                ->where('id', $entityId);
         $update->perform();
-    }
-
-    public function revert()
-    {
-        return; // no change to the entity has actually been performed
     }
 
     public function onSuccess()

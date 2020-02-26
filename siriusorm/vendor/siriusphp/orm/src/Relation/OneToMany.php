@@ -12,6 +12,8 @@ use Sirius\Orm\Query;
 
 class OneToMany extends Relation
 {
+    use HasAggregates;
+
     protected function applyDefaults(): void
     {
         $nativeKey = $this->nativeMapper->getPrimaryKey();
@@ -45,7 +47,6 @@ class OneToMany extends Relation
 
     public function joinSubselect(Query $query, string $reference)
     {
-        $tableRef = $this->foreignMapper->getTableAlias(true);
         $subselect = $query->subSelectForJoinWith()
                            ->columns($this->foreignMapper->getTable() . '.*')
                            ->from($this->foreignMapper->getTable())
@@ -65,13 +66,9 @@ class OneToMany extends Relation
             return;
         }
 
-        $found = [];
-        foreach ($result as $foreignEntity) {
-            if ($this->entitiesBelongTogether($nativeEntity, $foreignEntity)) {
-                $found[] = $foreignEntity;
-                $this->attachEntities($nativeEntity, $foreignEntity);
-            }
-        }
+        $nativeId = $this->getEntityId($this->nativeMapper, $nativeEntity, array_keys($this->keyPairs));
+
+        $found = $result[$nativeId] ?? [];
 
         $this->nativeMapper->setEntityAttribute($nativeEntity, $this->name, new Collection($found));
     }
@@ -106,7 +103,7 @@ class OneToMany extends Relation
         } else {
             // retrieve them again from the DB since the related collection might not have everything
             // for example due to a relation query callback
-            $foreignEntities = $this->getQuery(new Tracker($this->nativeMapper, [$nativeEntity->getArrayCopy()]))
+            $foreignEntities = $this->getQuery(new Tracker([$nativeEntity->getArrayCopy()]))
                                     ->get();
 
             foreach ($foreignEntities as $foreignEntity) {
