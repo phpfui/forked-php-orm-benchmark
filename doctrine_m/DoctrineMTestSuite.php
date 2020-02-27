@@ -87,13 +87,13 @@ class DoctrineMTestSuite extends AbstractTestSuite
             new Tag(['name' => 'Tag #t2_' . $i])
         ];
 
-
         $this->em->beginTransaction();
         $this->em->persist($product);
         $this->em->flush();
         $this->em->commit();
 
         $this->em->detach($product);
+        $this->em->clear();
         $this->products[] = $product->id;
 
         return $product;
