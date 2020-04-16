@@ -76,7 +76,6 @@ Comments/things to mention about the results. Please understand I'm not proficie
 - stable memory consumption (no difference between 100 runs and 500 runs)
 
 #### Doctrine ORM
-- the numbers are skewed on the "find" test because I had to set all relations as eager-loaded so that the "relations" test work as the rest. I would expect lower numbers for find
 - since Doctrine uses an Entity Manager I had to do a lot of `$em->clear()` to make it for a level playing field
 - I have a hunch that the eager loading uses some caching and the numbers are skewed in Doctrine's favour.
 - The memory consumption increases with the number of runs (500 runs consume 50% more memory than 100 runs)
