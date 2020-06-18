@@ -18,6 +18,8 @@ class ProductRelationships extends MapperRelationships
         ]);
         $this->oneToMany('taggings', ProductsTag::CLASS);
         $this->manyToMany('tags', Tag::CLASS, 'taggings');
-        $this->oneToMany('images', Image::CLASS)->where('imageable_type = ', 'product');
+        $this->oneToMany('images', Image::CLASS, [
+            'id' => 'imageable_id'
+        ])->where('imageable_type = ', 'product');
     }
 }
