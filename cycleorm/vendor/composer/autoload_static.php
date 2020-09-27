@@ -6,12 +6,11 @@ namespace Composer\Autoload;
 
 class ComposerStaticInitf73c3c1899b4f44cf203a48416c0b563
 {
+    public static $files = array (
+        '7e9bd612cc444b3eed788ebbe46263a0' => __DIR__ . '/..' . '/laminas/laminas-zendframework-bridge/src/autoload.php',
+    );
+
     public static $prefixLengthsPsr4 = array (
-        'Z' => 
-        array (
-            'Zend\\Stdlib\\' => 12,
-            'Zend\\Hydrator\\' => 14,
-        ),
         'S' => 
         array (
             'Spiral\\Pagination\\' => 18,
@@ -25,9 +24,16 @@ class ComposerStaticInitf73c3c1899b4f44cf203a48416c0b563
             'Psr\\Container\\' => 14,
             'PhpParser\\' => 10,
         ),
+        'L' => 
+        array (
+            'Laminas\\ZendFrameworkBridge\\' => 28,
+            'Laminas\\Stdlib\\' => 15,
+            'Laminas\\Hydrator\\' => 17,
+        ),
         'D' => 
         array (
             'Doctrine\\Instantiator\\' => 22,
+            'Doctrine\\Inflector\\' => 19,
             'Doctrine\\Common\\Inflector\\' => 26,
             'Doctrine\\Common\\Collections\\' => 28,
         ),
@@ -39,14 +45,6 @@ class ComposerStaticInitf73c3c1899b4f44cf203a48416c0b563
     );
 
     public static $prefixDirsPsr4 = array (
-        'Zend\\Stdlib\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/zendframework/zend-stdlib/src',
-        ),
-        'Zend\\Hydrator\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/zendframework/zend-hydrator/src',
-        ),
         'Spiral\\Pagination\\' => 
         array (
             0 => __DIR__ . '/..' . '/spiral/pagination/src',
@@ -75,9 +73,25 @@ class ComposerStaticInitf73c3c1899b4f44cf203a48416c0b563
         array (
             0 => __DIR__ . '/..' . '/nikic/php-parser/lib/PhpParser',
         ),
+        'Laminas\\ZendFrameworkBridge\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/laminas/laminas-zendframework-bridge/src',
+        ),
+        'Laminas\\Stdlib\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/laminas/laminas-stdlib/src',
+        ),
+        'Laminas\\Hydrator\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/laminas/laminas-hydrator/src',
+        ),
         'Doctrine\\Instantiator\\' => 
         array (
             0 => __DIR__ . '/..' . '/doctrine/instantiator/src/Doctrine/Instantiator',
+        ),
+        'Doctrine\\Inflector\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/doctrine/inflector/lib/Doctrine/Inflector',
         ),
         'Doctrine\\Common\\Inflector\\' => 
         array (

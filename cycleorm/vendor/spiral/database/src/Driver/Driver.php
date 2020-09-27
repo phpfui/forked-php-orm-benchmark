@@ -73,22 +73,22 @@ abstract class Driver implements DriverInterface, LoggerAwareInterface
     ];
 
     /** @var PDO|null */
-    private $pdo;
+    protected $pdo;
 
     /** @var int */
-    private $transactionLevel;
+    protected $transactionLevel;
 
     /** @var HandlerInterface */
-    private $schemaHandler;
+    protected $schemaHandler;
 
     /** @var CompilerInterface */
-    private $queryCompiler;
+    protected $queryCompiler;
 
     /** @var BuilderInterface */
-    private $queryBuilder;
+    protected $queryBuilder;
 
     /** @var PDOStatement[] */
-    private $queryCache = [];
+    protected $queryCache = [];
 
     /**
      * @param array             $options
@@ -379,6 +379,9 @@ abstract class Driver implements DriverInterface, LoggerAwareInterface
                     } catch (Throwable $e) {
                         throw $this->mapException($e, 'BEGIN TRANSACTION');
                     }
+                } else {
+                    $this->transactionLevel--;
+                    throw $e;
                 }
             }
         }
@@ -488,9 +491,7 @@ abstract class Driver implements DriverInterface, LoggerAwareInterface
         } finally {
             if ($this->logger !== null) {
                 $queryString = Interpolator::interpolate($query, $parameters);
-                $context = [
-                    'elapsed' => microtime(true) - $queryStart
-                ];
+                $context = $this->defineLoggerContext($queryStart, $statement ?? null);
 
                 if (isset($e)) {
                     $this->logger->error($queryString, $context);
@@ -689,5 +690,25 @@ abstract class Driver implements DriverInterface, LoggerAwareInterface
     protected function getDSN(): string
     {
         return $this->options['connection'] ?? $this->options['dsn'] ?? $this->options['addr'];
+    }
+
+    /**
+     * Creating a context for logging
+     *
+     * @param float             $queryStart Query start time
+     * @param PDOStatement|null $statement  Statement
+     *
+     * @return array
+     */
+    protected function defineLoggerContext(float $queryStart, ?PDOStatement $statement): array
+    {
+        $context = [
+            'elapsed' => microtime(true) - $queryStart,
+        ];
+        if ($statement !== null) {
+            $context['rowCount'] = $statement->rowCount();
+        }
+
+        return $context;
     }
 }

@@ -71,11 +71,7 @@ abstract class DatabaseMapper implements MapperInterface
 
         // Resolve field names
         foreach ($this->columns as $name => $column) {
-            if (!is_numeric($name)) {
-                $this->fields[] = $name;
-            } else {
-                $this->fields[] = $column;
-            }
+            $this->fields[] = is_numeric($name) ? $column : $name;
         }
     }
 
@@ -110,11 +106,8 @@ abstract class DatabaseMapper implements MapperInterface
             $this->primaryColumn
         );
 
-        if (!array_key_exists($this->primaryKey, $columns)) {
-            $insert->forward(Insert::INSERT_ID, $state, $this->primaryKey);
-        } else {
-            $insert->forward($this->primaryKey, $state, $this->primaryKey);
-        }
+        $key = isset($columns[$this->primaryKey]) ? $this->primaryKey : Insert::INSERT_ID;
+        $insert->forward($key, $state, $this->primaryKey);
 
         return $insert;
     }
@@ -127,7 +120,7 @@ abstract class DatabaseMapper implements MapperInterface
         $data = $this->fetchFields($entity);
 
         // in a future mapper must support solid states
-        $changes = array_udiff_assoc($data, $state->getData(), [static::class, 'compare']);
+        $changes = array_udiff_assoc($data, $state->getData(), [Node::class, 'compare']);
         unset($changes[$this->primaryKey]);
 
         $changedColumns = $this->mapColumns($changes);
@@ -197,27 +190,9 @@ abstract class DatabaseMapper implements MapperInterface
     {
         $result = [];
         foreach ($columns as $column => $value) {
-            if (array_key_exists($column, $this->columns)) {
-                $result[$this->columns[$column]] = $value;
-            } else {
-                $result[$column] = $value;
-            }
+            $result[$this->columns[$column] ?? $column] = $value;
         }
 
         return $result;
-    }
-
-    /**
-     * @param mixed $a
-     * @param mixed $b
-     * @return int
-     */
-    protected static function compare($a, $b): int
-    {
-        if ($a == $b) {
-            return 0;
-        }
-
-        return ($a > $b) ? 1 : -1;
     }
 }

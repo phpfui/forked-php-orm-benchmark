@@ -13,6 +13,7 @@ namespace Spiral\Database\Driver\Postgres;
 
 use Spiral\Database\Driver\Driver;
 use Spiral\Database\Driver\Postgres\Query\PostgresInsertQuery;
+use Spiral\Database\Driver\Postgres\Query\PostgresSelectQuery;
 use Spiral\Database\Exception\DriverException;
 use Spiral\Database\Exception\StatementException;
 use Spiral\Database\Query\DeleteQuery;
@@ -45,7 +46,7 @@ class PostgresDriver extends Driver
             new PostgresHandler(),
             new PostgresCompiler('""'),
             new QueryBuilder(
-                new SelectQuery(),
+                new PostgresSelectQuery(),
                 new PostgresInsertQuery(),
                 new UpdateQuery(),
                 new DeleteQuery()
@@ -85,8 +86,8 @@ class PostgresDriver extends Driver
         }
 
         $this->primaryKeys[$name] = $this->getSchemaHandler()
-            ->getSchema($table, $prefix)
-            ->getPrimaryKeys();
+                                         ->getSchema($table, $prefix)
+                                         ->getPrimaryKeys();
 
         if (count($this->primaryKeys[$name]) === 1) {
             //We do support only single primary key
@@ -104,6 +105,58 @@ class PostgresDriver extends Driver
     public function resetPrimaryKeys(): void
     {
         $this->primaryKeys = [];
+    }
+
+    /**
+     * Start SQL transaction with specified isolation level (not all DBMS support it). Nested
+     * transactions are processed using savepoints.
+     *
+     * @link http://en.wikipedia.org/wiki/Database_transaction
+     * @link http://en.wikipedia.org/wiki/Isolation_(database_systems)
+     *
+     * @param string $isolationLevel
+     * @return bool
+     */
+    public function beginTransaction(string $isolationLevel = null): bool
+    {
+        $this->transactionLevel++;
+
+        if ($this->transactionLevel === 1) {
+            if ($this->logger !== null) {
+                $this->logger->info('Begin transaction');
+            }
+
+            try {
+                $ok = $this->getPDO()->beginTransaction();
+                if ($isolationLevel !== null) {
+                    $this->setIsolationLevel($isolationLevel);
+                }
+
+                return $ok;
+            } catch (Throwable  $e) {
+                $e = $this->mapException($e, 'BEGIN TRANSACTION');
+
+                if (
+                    $e instanceof StatementException\ConnectionException
+                    && $this->options['reconnect']
+                ) {
+                    $this->disconnect();
+
+                    try {
+                        return $this->getPDO()->beginTransaction();
+                    } catch (Throwable $e) {
+                        throw $this->mapException($e, 'BEGIN TRANSACTION');
+                    }
+                } else {
+                    $this->transactionLevel--;
+                    throw $e;
+                }
+            }
+        }
+
+        $this->createSavepoint($this->transactionLevel);
+
+        return true;
     }
 
     /**
@@ -127,6 +180,7 @@ class PostgresDriver extends Driver
 
         if (
             strpos($message, 'eof detected') !== false
+            || strpos($message, 'broken pipe') !== false
             || strpos($message, '0800') !== false
             || strpos($message, '080P') !== false
             || strpos($message, 'connection') !== false
@@ -134,7 +188,7 @@ class PostgresDriver extends Driver
             return new StatementException\ConnectionException($exception, $query);
         }
 
-        if ((int)$exception->getCode() >= 23000 && (int)$exception->getCode() < 24000) {
+        if ((int) $exception->getCode() >= 23000 && (int) $exception->getCode() < 24000) {
             return new StatementException\ConstrainException($exception, $query);
         }
 

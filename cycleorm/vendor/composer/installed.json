@@ -1,27 +1,27 @@
 [
     {
         "name": "cycle/orm",
-        "version": "v1.2.3",
-        "version_normalized": "1.2.3.0",
+        "version": "v1.2.12",
+        "version_normalized": "1.2.12.0",
         "source": {
             "type": "git",
             "url": "https://github.com/cycle/orm.git",
-            "reference": "c1deeac3cf73073d55c35e6be15b9ac8c3935296"
+            "reference": "4e8f5fdc0ae07f3515f639f9f3f53ef3b14c10ee"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/cycle/orm/zipball/c1deeac3cf73073d55c35e6be15b9ac8c3935296",
-            "reference": "c1deeac3cf73073d55c35e6be15b9ac8c3935296",
+            "url": "https://api.github.com/repos/cycle/orm/zipball/4e8f5fdc0ae07f3515f639f9f3f53ef3b14c10ee",
+            "reference": "4e8f5fdc0ae07f3515f639f9f3f53ef3b14c10ee",
             "shasum": ""
         },
         "require": {
             "doctrine/collections": "^1.5",
-            "doctrine/inflector": "^1.3",
+            "doctrine/inflector": "^1.4",
             "doctrine/instantiator": "^1.2",
             "ext-pdo": "*",
+            "laminas/laminas-hydrator": "^2.4|^3.0",
             "php": "^7.2",
-            "spiral/database": "^2.3",
-            "zendframework/zend-hydrator": "^2.4|^3.0"
+            "spiral/database": "^2.3"
         },
         "require-dev": {
             "mockery/mockery": "^1.1",
@@ -31,7 +31,7 @@
             "spiral/dumper": "^1.0",
             "spiral/tokenizer": "^2.1"
         },
-        "time": "2020-02-07T11:29:57+00:00",
+        "time": "2020-07-30T09:15:03+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
@@ -47,35 +47,30 @@
     },
     {
         "name": "doctrine/collections",
-        "version": "1.6.4",
-        "version_normalized": "1.6.4.0",
+        "version": "1.6.7",
+        "version_normalized": "1.6.7.0",
         "source": {
             "type": "git",
             "url": "https://github.com/doctrine/collections.git",
-            "reference": "6b1e4b2b66f6d6e49983cebfe23a21b7ccc5b0d7"
+            "reference": "55f8b799269a1a472457bd1a41b4f379d4cfba4a"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/doctrine/collections/zipball/6b1e4b2b66f6d6e49983cebfe23a21b7ccc5b0d7",
-            "reference": "6b1e4b2b66f6d6e49983cebfe23a21b7ccc5b0d7",
+            "url": "https://api.github.com/repos/doctrine/collections/zipball/55f8b799269a1a472457bd1a41b4f379d4cfba4a",
+            "reference": "55f8b799269a1a472457bd1a41b4f379d4cfba4a",
             "shasum": ""
         },
         "require": {
-            "php": "^7.1.3"
+            "php": "^7.1.3 || ^8.0"
         },
         "require-dev": {
             "doctrine/coding-standard": "^6.0",
             "phpstan/phpstan-shim": "^0.9.2",
             "phpunit/phpunit": "^7.0",
-            "vimeo/psalm": "^3.2.2"
+            "vimeo/psalm": "^3.8.1"
         },
-        "time": "2019-11-13T13:07:11+00:00",
+        "time": "2020-07-27T17:53:49+00:00",
         "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "1.6.x-dev"
-            }
-        },
         "installation-source": "dist",
         "autoload": {
             "psr-4": {
@@ -119,36 +114,41 @@
     },
     {
         "name": "doctrine/inflector",
-        "version": "1.3.1",
-        "version_normalized": "1.3.1.0",
+        "version": "1.4.3",
+        "version_normalized": "1.4.3.0",
         "source": {
             "type": "git",
             "url": "https://github.com/doctrine/inflector.git",
-            "reference": "ec3a55242203ffa6a4b27c58176da97ff0a7aec1"
+            "reference": "4650c8b30c753a76bf44fb2ed00117d6f367490c"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/doctrine/inflector/zipball/ec3a55242203ffa6a4b27c58176da97ff0a7aec1",
-            "reference": "ec3a55242203ffa6a4b27c58176da97ff0a7aec1",
+            "url": "https://api.github.com/repos/doctrine/inflector/zipball/4650c8b30c753a76bf44fb2ed00117d6f367490c",
+            "reference": "4650c8b30c753a76bf44fb2ed00117d6f367490c",
             "shasum": ""
         },
         "require": {
-            "php": "^7.1"
+            "php": "^7.2 || ^8.0"
         },
         "require-dev": {
-            "phpunit/phpunit": "^6.2"
+            "doctrine/coding-standard": "^7.0",
+            "phpstan/phpstan": "^0.11",
+            "phpstan/phpstan-phpunit": "^0.11",
+            "phpstan/phpstan-strict-rules": "^0.11",
+            "phpunit/phpunit": "^7.0 || ^8.0 || ^9.0"
         },
-        "time": "2019-10-30T19:59:35+00:00",
+        "time": "2020-05-29T07:19:59+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
-                "dev-master": "1.3.x-dev"
+                "dev-master": "2.0.x-dev"
             }
         },
         "installation-source": "dist",
         "autoload": {
             "psr-4": {
-                "Doctrine\\Common\\Inflector\\": "lib/Doctrine/Common/Inflector"
+                "Doctrine\\Common\\Inflector\\": "lib/Doctrine/Common/Inflector",
+                "Doctrine\\Inflector\\": "lib/Doctrine/Inflector"
             }
         },
         "notification-url": "https://packagist.org/downloads/",
@@ -177,32 +177,38 @@
                 "email": "schmittjoh@gmail.com"
             }
         ],
-        "description": "Common String Manipulations with regard to casing and singular/plural rules.",
-        "homepage": "http://www.doctrine-project.org",
+        "description": "PHP Doctrine Inflector is a small library that can perform string manipulations with regard to upper/lowercase and singular/plural forms of words.",
+        "homepage": "https://www.doctrine-project.org/projects/inflector.html",
         "keywords": [
             "inflection",
-            "pluralize",
-            "singularize",
-            "string"
+            "inflector",
+            "lowercase",
+            "manipulation",
+            "php",
+            "plural",
+            "singular",
+            "strings",
+            "uppercase",
+            "words"
         ]
     },
     {
         "name": "doctrine/instantiator",
-        "version": "1.3.0",
-        "version_normalized": "1.3.0.0",
+        "version": "1.3.1",
+        "version_normalized": "1.3.1.0",
         "source": {
             "type": "git",
             "url": "https://github.com/doctrine/instantiator.git",
-            "reference": "ae466f726242e637cebdd526a7d991b9433bacf1"
+            "reference": "f350df0268e904597e3bd9c4685c53e0e333feea"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/doctrine/instantiator/zipball/ae466f726242e637cebdd526a7d991b9433bacf1",
-            "reference": "ae466f726242e637cebdd526a7d991b9433bacf1",
+            "url": "https://api.github.com/repos/doctrine/instantiator/zipball/f350df0268e904597e3bd9c4685c53e0e333feea",
+            "reference": "f350df0268e904597e3bd9c4685c53e0e333feea",
             "shasum": ""
         },
         "require": {
-            "php": "^7.1"
+            "php": "^7.1 || ^8.0"
         },
         "require-dev": {
             "doctrine/coding-standard": "^6.0",
@@ -213,7 +219,7 @@
             "phpstan/phpstan-shim": "^0.11",
             "phpunit/phpunit": "^7.0"
         },
-        "time": "2019-10-21T16:45:58+00:00",
+        "time": "2020-05-29T17:27:14+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -242,6 +248,177 @@
         "keywords": [
             "constructor",
             "instantiate"
+        ]
+    },
+    {
+        "name": "laminas/laminas-hydrator",
+        "version": "2.4.0",
+        "version_normalized": "2.4.0.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/laminas/laminas-hydrator.git",
+            "reference": "d0164371cef91764c657784d9a14f210d1ac4be7"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/laminas/laminas-hydrator/zipball/d0164371cef91764c657784d9a14f210d1ac4be7",
+            "reference": "d0164371cef91764c657784d9a14f210d1ac4be7",
+            "shasum": ""
+        },
+        "require": {
+            "laminas/laminas-stdlib": "^3.0",
+            "laminas/laminas-zendframework-bridge": "^1.0",
+            "php": "^5.6 || ^7.0"
+        },
+        "replace": {
+            "zendframework/zend-hydrator": "self.version"
+        },
+        "require-dev": {
+            "laminas/laminas-coding-standard": "~1.0.0",
+            "laminas/laminas-eventmanager": "^2.6.2 || ^3.0",
+            "laminas/laminas-filter": "^2.6",
+            "laminas/laminas-inputfilter": "^2.6",
+            "laminas/laminas-serializer": "^2.6.1",
+            "laminas/laminas-servicemanager": "^2.7.5 || ^3.0.3",
+            "phpunit/phpunit": "^5.7.27 || ^6.5.8 || ^7.1.2"
+        },
+        "suggest": {
+            "laminas/laminas-eventmanager": "^2.6.2 || ^3.0, to support aggregate hydrator usage",
+            "laminas/laminas-filter": "^2.6, to support naming strategy hydrator usage",
+            "laminas/laminas-serializer": "^2.6.1, to use the SerializableStrategy",
+            "laminas/laminas-servicemanager": "^2.7.5 || ^3.0.3, to support hydrator plugin manager usage"
+        },
+        "time": "2019-12-31T17:06:35+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-release-1.0": "1.0.x-dev",
+                "dev-release-1.1": "1.1.x-dev",
+                "dev-master": "2.4.x-dev",
+                "dev-develop": "2.5.x-dev"
+            },
+            "laminas": {
+                "component": "Laminas\\Hydrator",
+                "config-provider": "Laminas\\Hydrator\\ConfigProvider"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Laminas\\Hydrator\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "BSD-3-Clause"
+        ],
+        "description": "Serialize objects to arrays, and vice versa",
+        "homepage": "https://laminas.dev",
+        "keywords": [
+            "hydrator",
+            "laminas"
+        ]
+    },
+    {
+        "name": "laminas/laminas-stdlib",
+        "version": "3.2.1",
+        "version_normalized": "3.2.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/laminas/laminas-stdlib.git",
+            "reference": "2b18347625a2f06a1a485acfbc870f699dbe51c6"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/laminas/laminas-stdlib/zipball/2b18347625a2f06a1a485acfbc870f699dbe51c6",
+            "reference": "2b18347625a2f06a1a485acfbc870f699dbe51c6",
+            "shasum": ""
+        },
+        "require": {
+            "laminas/laminas-zendframework-bridge": "^1.0",
+            "php": "^5.6 || ^7.0"
+        },
+        "replace": {
+            "zendframework/zend-stdlib": "self.version"
+        },
+        "require-dev": {
+            "laminas/laminas-coding-standard": "~1.0.0",
+            "phpbench/phpbench": "^0.13",
+            "phpunit/phpunit": "^5.7.27 || ^6.5.8 || ^7.1.2"
+        },
+        "time": "2019-12-31T17:51:15+00:00",
+        "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "3.2.x-dev",
+                "dev-develop": "3.3.x-dev"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "psr-4": {
+                "Laminas\\Stdlib\\": "src/"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "BSD-3-Clause"
+        ],
+        "description": "SPL extensions, array utilities, error handlers, and more",
+        "homepage": "https://laminas.dev",
+        "keywords": [
+            "laminas",
+            "stdlib"
+        ]
+    },
+    {
+        "name": "laminas/laminas-zendframework-bridge",
+        "version": "1.1.1",
+        "version_normalized": "1.1.1.0",
+        "source": {
+            "type": "git",
+            "url": "https://github.com/laminas/laminas-zendframework-bridge.git",
+            "reference": "6ede70583e101030bcace4dcddd648f760ddf642"
+        },
+        "dist": {
+            "type": "zip",
+            "url": "https://api.github.com/repos/laminas/laminas-zendframework-bridge/zipball/6ede70583e101030bcace4dcddd648f760ddf642",
+            "reference": "6ede70583e101030bcace4dcddd648f760ddf642",
+            "shasum": ""
+        },
+        "require": {
+            "php": "^5.6 || ^7.0 || ^8.0"
+        },
+        "require-dev": {
+            "phpunit/phpunit": "^5.7 || ^6.5 || ^7.5 || ^8.1 || ^9.3",
+            "squizlabs/php_codesniffer": "^3.5"
+        },
+        "time": "2020-09-14T14:23:00+00:00",
+        "type": "library",
+        "extra": {
+            "laminas": {
+                "module": "Laminas\\ZendFrameworkBridge"
+            }
+        },
+        "installation-source": "dist",
+        "autoload": {
+            "files": [
+                "src/autoload.php"
+            ],
+            "psr-4": {
+                "Laminas\\ZendFrameworkBridge\\": "src//"
+            }
+        },
+        "notification-url": "https://packagist.org/downloads/",
+        "license": [
+            "BSD-3-Clause"
+        ],
+        "description": "Alias legacy ZF class names to Laminas Project equivalents.",
+        "keywords": [
+            "ZendFramework",
+            "autoloading",
+            "laminas",
+            "zf"
         ]
     },
     {
@@ -470,23 +647,23 @@
     },
     {
         "name": "psr/log",
-        "version": "1.1.2",
-        "version_normalized": "1.1.2.0",
+        "version": "1.1.3",
+        "version_normalized": "1.1.3.0",
         "source": {
             "type": "git",
             "url": "https://github.com/php-fig/log.git",
-            "reference": "446d54b4cb6bf489fc9d75f55843658e6f25d801"
+            "reference": "0f73288fd15629204f9d42b7055f72dacbe811fc"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/php-fig/log/zipball/446d54b4cb6bf489fc9d75f55843658e6f25d801",
-            "reference": "446d54b4cb6bf489fc9d75f55843658e6f25d801",
+            "url": "https://api.github.com/repos/php-fig/log/zipball/0f73288fd15629204f9d42b7055f72dacbe811fc",
+            "reference": "0f73288fd15629204f9d42b7055f72dacbe811fc",
             "shasum": ""
         },
         "require": {
             "php": ">=5.3.0"
         },
-        "time": "2019-11-01T11:05:21+00:00",
+        "time": "2020-03-23T09:12:05+00:00",
         "type": "library",
         "extra": {
             "branch-alias": {
@@ -563,17 +740,17 @@
     },
     {
         "name": "spiral/database",
-        "version": "v2.7.10",
-        "version_normalized": "2.7.10.0",
+        "version": "v2.7.17",
+        "version_normalized": "2.7.17.0",
         "source": {
             "type": "git",
             "url": "https://github.com/spiral/database.git",
-            "reference": "e6d8c8e2f965f8617e8c1c545101f48f57298e35"
+            "reference": "ef943107537277e3995017982deeb6cd310093ca"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/spiral/database/zipball/e6d8c8e2f965f8617e8c1c545101f48f57298e35",
-            "reference": "e6d8c8e2f965f8617e8c1c545101f48f57298e35",
+            "url": "https://api.github.com/repos/spiral/database/zipball/ef943107537277e3995017982deeb6cd310093ca",
+            "reference": "ef943107537277e3995017982deeb6cd310093ca",
             "shasum": ""
         },
         "require": {
@@ -590,7 +767,7 @@
             "spiral/dumper": "^1.0",
             "spiral/tokenizer": "^2.1"
         },
-        "time": "2020-02-18T10:23:26+00:00",
+        "time": "2020-09-02T11:37:19+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
@@ -612,17 +789,17 @@
     },
     {
         "name": "spiral/logger",
-        "version": "v1.2.1",
-        "version_normalized": "1.2.1.0",
+        "version": "v1.2.2",
+        "version_normalized": "1.2.2.0",
         "source": {
             "type": "git",
             "url": "https://github.com/spiral/logger.git",
-            "reference": "d693b5f8259a25f20893ed14045aea4a7438dfda"
+            "reference": "20fc6cf2b44ee85d92cfc1f30d4e92b9f3efb81a"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/spiral/logger/zipball/d693b5f8259a25f20893ed14045aea4a7438dfda",
-            "reference": "d693b5f8259a25f20893ed14045aea4a7438dfda",
+            "url": "https://api.github.com/repos/spiral/logger/zipball/20fc6cf2b44ee85d92cfc1f30d4e92b9f3efb81a",
+            "reference": "20fc6cf2b44ee85d92cfc1f30d4e92b9f3efb81a",
             "shasum": ""
         },
         "require": {
@@ -635,7 +812,7 @@
             "phpunit/phpunit": "~7.0",
             "spiral/code-style": "^1.0"
         },
-        "time": "2019-11-13T06:29:56+00:00",
+        "time": "2020-07-30T10:51:30+00:00",
         "type": "library",
         "installation-source": "dist",
         "autoload": {
@@ -657,32 +834,37 @@
     },
     {
         "name": "spiral/pagination",
-        "version": "v2.2.2",
-        "version_normalized": "2.2.2.0",
+        "version": "v2.6.0",
+        "version_normalized": "2.6.0.0",
         "source": {
             "type": "git",
             "url": "https://github.com/spiral/pagination.git",
-            "reference": "c2ccf0c3c38fc6cdb2e547685008898dc5804e6f"
+            "reference": "6c31e4bfb0f05aaf8cfa11c82900b5e643990d4a"
         },
         "dist": {
             "type": "zip",
-            "url": "https://api.github.com/repos/spiral/pagination/zipball/c2ccf0c3c38fc6cdb2e547685008898dc5804e6f",
-            "reference": "c2ccf0c3c38fc6cdb2e547685008898dc5804e6f",
+            "url": "https://api.github.com/repos/spiral/pagination/zipball/6c31e4bfb0f05aaf8cfa11c82900b5e643990d4a",
+            "reference": "6c31e4bfb0f05aaf8cfa11c82900b5e643990d4a",
             "shasum": ""
         },
         "require": {
-            "php": ">=7.1"
+            "php": "^7.2"
         },
         "require-dev": {
-            "mockery/mockery": "^1.1",
-            "phpunit/phpunit": "~7.0"
+            "mockery/mockery": "^1.3",
+            "phpunit/phpunit": "^8.5|^9.0"
         },
-        "time": "2019-04-30T11:36:56+00:00",
+        "time": "2020-08-24T02:16:40+00:00",
         "type": "library",
+        "extra": {
+            "branch-alias": {
+                "dev-master": "2.6.x-dev"
+            }
+        },
         "installation-source": "dist",
         "autoload": {
             "psr-4": {
-                "Spiral\\Pagination\\": "src/"
+                "Spiral\\Pagination\\": "src"
             }
         },
         "notification-url": "https://packagist.org/downloads/",
@@ -695,121 +877,7 @@
                 "email": "wolfy.jd@gmail.com"
             }
         ],
-        "description": "Common pagination interfaces"
-    },
-    {
-        "name": "zendframework/zend-hydrator",
-        "version": "2.4.0",
-        "version_normalized": "2.4.0.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/zendframework/zend-hydrator.git",
-            "reference": "bd48bc3bc046df007a94125f868dd1aa1b73a813"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/zendframework/zend-hydrator/zipball/bd48bc3bc046df007a94125f868dd1aa1b73a813",
-            "reference": "bd48bc3bc046df007a94125f868dd1aa1b73a813",
-            "shasum": ""
-        },
-        "require": {
-            "php": "^5.6 || ^7.0",
-            "zendframework/zend-stdlib": "^3.0"
-        },
-        "require-dev": {
-            "phpunit/phpunit": "^5.7.27 || ^6.5.8 || ^7.1.2",
-            "zendframework/zend-coding-standard": "~1.0.0",
-            "zendframework/zend-eventmanager": "^2.6.2 || ^3.0",
-            "zendframework/zend-filter": "^2.6",
-            "zendframework/zend-inputfilter": "^2.6",
-            "zendframework/zend-serializer": "^2.6.1",
-            "zendframework/zend-servicemanager": "^2.7.5 || ^3.0.3"
-        },
-        "suggest": {
-            "zendframework/zend-eventmanager": "^2.6.2 || ^3.0, to support aggregate hydrator usage",
-            "zendframework/zend-filter": "^2.6, to support naming strategy hydrator usage",
-            "zendframework/zend-serializer": "^2.6.1, to use the SerializableStrategy",
-            "zendframework/zend-servicemanager": "^2.7.5 || ^3.0.3, to support hydrator plugin manager usage"
-        },
-        "time": "2018-04-30T21:22:14+00:00",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-release-1.0": "1.0.x-dev",
-                "dev-release-1.1": "1.1.x-dev",
-                "dev-master": "2.4.x-dev",
-                "dev-develop": "2.5.x-dev"
-            },
-            "zf": {
-                "component": "Zend\\Hydrator",
-                "config-provider": "Zend\\Hydrator\\ConfigProvider"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-4": {
-                "Zend\\Hydrator\\": "src/"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "BSD-3-Clause"
-        ],
-        "description": "Serialize objects to arrays, and vice versa",
-        "keywords": [
-            "ZendFramework",
-            "hydrator",
-            "zf"
-        ],
-        "abandoned": "laminas/laminas-hydrator"
-    },
-    {
-        "name": "zendframework/zend-stdlib",
-        "version": "3.2.1",
-        "version_normalized": "3.2.1.0",
-        "source": {
-            "type": "git",
-            "url": "https://github.com/zendframework/zend-stdlib.git",
-            "reference": "66536006722aff9e62d1b331025089b7ec71c065"
-        },
-        "dist": {
-            "type": "zip",
-            "url": "https://api.github.com/repos/zendframework/zend-stdlib/zipball/66536006722aff9e62d1b331025089b7ec71c065",
-            "reference": "66536006722aff9e62d1b331025089b7ec71c065",
-            "shasum": ""
-        },
-        "require": {
-            "php": "^5.6 || ^7.0"
-        },
-        "require-dev": {
-            "phpbench/phpbench": "^0.13",
-            "phpunit/phpunit": "^5.7.27 || ^6.5.8 || ^7.1.2",
-            "zendframework/zend-coding-standard": "~1.0.0"
-        },
-        "time": "2018-08-28T21:34:05+00:00",
-        "type": "library",
-        "extra": {
-            "branch-alias": {
-                "dev-master": "3.2.x-dev",
-                "dev-develop": "3.3.x-dev"
-            }
-        },
-        "installation-source": "dist",
-        "autoload": {
-            "psr-4": {
-                "Zend\\Stdlib\\": "src/"
-            }
-        },
-        "notification-url": "https://packagist.org/downloads/",
-        "license": [
-            "BSD-3-Clause"
-        ],
-        "description": "SPL extensions, array utilities, error handlers, and more",
-        "keywords": [
-            "ZendFramework",
-            "stdlib",
-            "zf"
-        ],
-        "abandoned": "laminas/laminas-stdlib"
+        "description": "Common pagination interfaces",
+        "homepage": "https://spiral.dev"
     }
 ]

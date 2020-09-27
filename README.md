@@ -43,19 +43,20 @@ The benchmark runs 500 times (a number that you can change in the `AbstractTestS
 
 Smaller score is the better (i. e. the faster).
 
-(updated 2020-February-23)
+(updated 2020-September-27)
 
 | Library                          | Insert | Update | Find   | Complex| EagerL. | memory usage|  time  |
 | --------------------------------:| ------:| ------:| ------:| ------:| -------:| -----------:| ------:|
-|                         AtlasOrm |   1260 |    924 |    168 |    165 |    6313 |   7,922,240 |   9.17 |
-|                         CycleOrm |   2127 |   1331 |    261 |    329 |    5972 |  10,000,008 |  10.51 |
-|      CycleOrmWithGeneratedMapper |   1949 |   1121 |    194 |    454 |    5031 |  12,093,976 |   9.46 |
-|            CycleOrmDynamicSchema |   1859 |   1320 |    215 |    341 |    4966 |   9,966,552 |   8.80 |
-|                        DoctrineM |    788 |    626 |    493 |    197 |    6306 |  12,582,912 |   9.19 |
-|               DoctrineMWithCache |    792 |    457 |    486 |    201 |    5867 |  12,582,912 |   7.98 |
-|                         Eloquent |   2773 |   1990 |    377 |    562 |    7543 |   4,194,304 |  13.56 |
-|             EloquentWithoutEvent |   2531 |   1737 |    378 |    544 |    7079 |   4,194,304 |  12.36 |
-|                        SiriusOrm |   1389 |   1076 |    239 |    180 |    4492 |   3,726,032 |   7.57 |
+|                         AtlasOrm |   1457 |   1034 |    173 |    181 |    7011 |   7,922,256 |  10.00 |
+|                         CycleOrm |   2369 |   1474 |    278 |    387 |    5810 |  10,000,024 |  10.52 |
+|      CycleOrmWithGeneratedMapper |   2015 |   1244 |    204 |    386 |    5520 |  12,093,992 |   9.66 |
+|            CycleOrmDynamicSchema |   2110 |   1680 |    204 |    375 |    4998 |   9,966,568 |   9.49 |
+|                        DoctrineM |    833 |    513 |    505 |    248 |    7203 |  12,582,912 |   9.64 |
+|               DoctrineMWithCache |    882 |    500 |    547 |    216 |    5827 |  12,582,912 |   8.18 |
+|                         Eloquent |   3106 |   2254 |    456 |    610 |    8552 |   4,194,304 |  15.14 |
+|             EloquentWithoutEvent |   2841 |   2009 |    456 |    617 |    8073 |   4,194,304 |  14.12 |
+|                        SiriusOrm |   1552 |   1371 |    280 |    234 |    5033 |   3,726,048 |   8.58 |
+
 
 
 
@@ -85,8 +86,7 @@ Comments/things to mention about the results. Please understand I'm not proficie
 
 #### Sirius ORM
 - stable memory consumption (no difference between 100 runs and 500 runs)
-- as stated above, I'm the author. However the library doesn't have cache-ing mechanism or any other performance enhancement options (eg: generating Proxy classes). It also doesn't have an event manager or an entity manager. I would say that in
- terms of capabilities is closest to Eloquent (the version without events).
+- as stated above, I'm the author. However the library doesn't have cache-ing mechanism or any other performance enhancement options (eg: generating Proxy classes). It also doesn't have an event manager or an entity manager. I would say that in terms of capabilities is closest to Eloquent (the version without events).
 
 ## 4. Contributions
 

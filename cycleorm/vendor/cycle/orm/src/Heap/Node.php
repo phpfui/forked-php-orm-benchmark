@@ -32,14 +32,14 @@ final class Node implements ProducerInterface, ConsumerInterface
     public const SCHEDULED_DELETE = 5;
     public const DELETED          = 6;
 
+    /** @var string */
+    private $role;
+
     /** @var int */
     private $status;
 
     /** @var array */
     private $data;
-
-    /** @var string */
-    private $role;
 
     /** @var null|State */
     private $state;
@@ -123,7 +123,7 @@ final class Node implements ProducerInterface, ConsumerInterface
     }
 
     /**
-     * Get current state data.
+     * Get current state data. Mutalbe inside the transaction.
      *
      * @return array
      */
@@ -133,6 +133,16 @@ final class Node implements ProducerInterface, ConsumerInterface
             return $this->state->getData();
         }
 
+        return $this->data;
+    }
+
+    /**
+     * The intial (post-load) node date. Does not change during the transaction.
+     *
+     * @return array
+     */
+    public function getInitialData(): array
+    {
         return $this->data;
     }
 
@@ -194,9 +204,13 @@ final class Node implements ProducerInterface, ConsumerInterface
      * @param mixed $b
      * @return int
      */
-    private static function compare($a, $b): int
+    public static function compare($a, $b): int
     {
         if ($a == $b) {
+            if (($a === null) !== ($b === null)) {
+                return 1;
+            }
+
             return 0;
         }
 

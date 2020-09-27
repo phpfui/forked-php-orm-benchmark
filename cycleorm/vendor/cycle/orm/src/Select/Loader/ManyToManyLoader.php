@@ -23,6 +23,7 @@ use Cycle\ORM\Select\LoaderInterface;
 use Cycle\ORM\Select\Traits\WhereTrait;
 use Spiral\Database\Injection\Parameter;
 use Spiral\Database\Query\SelectQuery;
+use Spiral\Database\StatementInterface;
 
 class ManyToManyLoader extends JoinableLoader
 {
@@ -116,7 +117,7 @@ class ManyToManyLoader extends JoinableLoader
      */
     public function configureQuery(SelectQuery $query, array $outerKeys = []): SelectQuery
     {
-        if ($this->isLoaded() && $this->isJoined() && (int)$query->getLimit() !== 0) {
+        if ($this->isLoaded() && $this->isJoined() && (int) $query->getLimit() !== 0) {
             throw new LoaderException('Unable to load data using join with limit on parent query');
         }
 
@@ -177,6 +178,17 @@ class ManyToManyLoader extends JoinableLoader
         $node->joinNode('@', parent::createNode());
 
         return $node;
+    }
+
+    /**
+     * @param AbstractNode $node
+     */
+    protected function loadChild(AbstractNode $node): void
+    {
+        $node = $node->getNode('@');
+        foreach ($this->load as $relation => $loader) {
+            $loader->loadData($node->getNode($relation));
+        }
     }
 
     /**

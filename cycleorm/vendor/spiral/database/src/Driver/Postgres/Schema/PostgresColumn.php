@@ -72,6 +72,7 @@ class PostgresColumn extends AbstractColumn
         'date'        => 'date',
         'time'        => 'time without time zone',
         'timestamp'   => 'timestamp without time zone',
+        'timestamptz' => 'timestamp with time zone',
 
         //Binary types
         'binary'      => 'bytea',
@@ -79,7 +80,7 @@ class PostgresColumn extends AbstractColumn
         'longBinary'  => 'bytea',
 
         //Additional types
-        'json'        => 'json',
+        'json'        => 'text',
         'jsonb'       => 'jsonb',
         'uuid'        => 'uuid'
     ];
@@ -102,7 +103,8 @@ class PostgresColumn extends AbstractColumn
         'decimal'     => ['numeric'],
         'date'        => ['date'],
         'time'        => ['time', 'time with time zone', 'time without time zone'],
-        'timestamp'   => ['timestamp', 'timestamp with time zone', 'timestamp without time zone'],
+        'timestamp'   => ['timestamp', 'timestamp without time zone'],
+        'timestamptz' => ['timestamp with time zone'],
         'binary'      => ['bytea'],
         'json'        => ['json'],
         'jsonb'       => ['jsonb']

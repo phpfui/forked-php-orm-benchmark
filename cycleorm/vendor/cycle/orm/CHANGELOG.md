@@ -1,5 +1,48 @@
 # CHANGELOG 
 
+v1.2.12 (30.07.2020)
+--------------------
+- [bugfix] fixes typo in eager loading  
+
+v1.2.11 (22.07.2020)
+--------------------
+- [bugfix] incorrect update sequence for nullable numeric values  
+
+v1.2.10 (16.07.2020)
+--------------------
+- [bugfix] causing incorrect command order while updating transitive key for RefersTo relation
+
+v1.2.9 (24.06.2020)
+--------------------
+- fixed bug causing ORM to disable relation graph pointing to Promises in related entities
+- more promise related tests
+- adds getTarget to RelationInterface 
+
+v1.2.8 (11.05.2020)
+--------------------
+- fixed compatibility issues with PHPUnit8 (no more warnings)
+- [bugfix] MtM relation did not load eager relations when selected via promise #94  
+- added more MtM tests
+
+v1.2.7 (26.04.2020)
+--------------------
+- a number of performance optimizations by @pine3ree
+- laminas hydrators used directly by @pine3ree
+
+v1.2.6 (07.04.2020)
+--------------------
+- `zendframework/zend-hydrator` replaced with `laminas/laminas-hydrator`
+
+v1.2.5 (25.03.2020)
+--------------------
+- do not load embedded object when parent not loaded
+
+v1.2.4 (10.03.2020)
+--------------------
+- minor performance optimizations
+- all collection promises are Selectable
+- reverted notNull relation logic by @mishfish
+
 v1.2.3 (07.02.2020)
 --------------------
 - bumped PHPUnit version to 8

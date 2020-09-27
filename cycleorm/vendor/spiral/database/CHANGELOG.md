@@ -1,5 +1,35 @@
-CHANGELOG for 0.9.0 RC
+CHANGELOG
 ======================
+
+v2.7.17 (02.09.2020)
+-----
+- added the ability to modify the database logger context by @Alexsisukin
+- added distinctOn method to Postgres Select Query
+
+v2.7.16 (28.08.2020)
+-----
+- fixes bug with invalid transaction level when transaction can't be started
+- set isolation level after beginning the transaction for Postgres
+
+v2.7.15 (17.06.2020)
+-----
+- handle Docker specific connection exceptions (broken pipe)
+
+v2.7.14 (23.04.2020)
+-----
+- fixed bug with invalid compilation of multi-group-by statements by @yiiliveext
+
+v2.7.13 (04.04.2020)
+-----
+- improved legacy config resolution (invalid `options` parsing)
+
+v2.7.12 (31.03.2020)
+-----
+- default `json` type for Postgres fallbacks to text to unify with other drivers
+
+v2.7.11 (12.03.2020)
+-----
+- Add PostgreSQL `timestamptz` mapping for `timestamp with time zone` by @rauanmayemir
 
 v2.7.10 (18.02.2020)
 -----
@@ -62,16 +92,16 @@ v2.7.2 (18.01.2020)
 
 2.6.8 (24.12.2019)
 -----
-- [bufgix] proper abstract type detection for primary UUID columns for SQLite driver 
+- [bufgix] proper abstract type detection for primary UUID columns for SQLite driver
 
 2.6.7 (23.12.2019)
 -----
-- [bufgix] proper exception type for syntax errors in MariaDB (previously was ConnectionException) 
+- [bufgix] proper exception type for syntax errors in MariaDB (previously was ConnectionException)
 
 2.6.6 (11.12.2019)
 -----
-- allow drivers to handle low level error exceptions 
-- qualify "Connection reset by peer" as connection exception 
+- allow drivers to handle low level error exceptions
+- qualify "Connection reset by peer" as connection exception
 - fixed interpolation of named parameters
 
 2.6.5 (11.12.2019)
@@ -183,7 +213,7 @@ v2.7.2 (18.01.2020)
 - new interface for driver, database, table, compiler and handler
 - immutable quoter
 - more tests
-- custom exceptions for connection and constrain exceptions 
+- custom exceptions for connection and constrain exceptions
 
 1.0.1 (15.06.2018)
 -----

@@ -24,12 +24,12 @@ trait ContextTrait
 {
 
     /**
-     * True is given relation is required for the object to be saved (i.e. NOT NULL).
+     * True if given relation is not required for the object to be saved (i.e. NULL).
      *
-     * @todo rename to isNullable and inverse the logic
      * @return bool
      */
-    abstract public function isNotNullable(): bool;
+    abstract public function isNullable(): bool;
+
     /**
      * Configure context parameter using value from parent entity. Created promise.
      *
@@ -45,13 +45,18 @@ trait ContextTrait
         $toColumn = $this->columnName($to, $toKey);
 
         // do not execute until the key is given
-        $carrier->waitContext($toColumn, $this->isNotNullable());
+        $carrier->waitContext($toColumn, !$this->isNullable());
 
         // forward key from state to the command (on change)
         $to->forward($toKey, $carrier, $toColumn);
 
         // link 2 keys and trigger cascade falling right now (if exists)
         $from->forward($fromKey, $to, $toKey, true);
+
+        // edge case while updating transitive key (exists in acceptor but does not exists in provider)
+        if (!array_key_exists($fromKey, $from->getInitialData())) {
+            $carrier->waitContext($toColumn, !$this->isNullable());
+        }
 
         return $carrier;
     }
@@ -79,17 +84,17 @@ trait ContextTrait
     /**
      * Fetch key from the state.
      *
-     * @param Node   $state
+     * @param Node   $node
      * @param string $key
      * @return mixed|null
      */
-    protected function fetchKey(?Node $state, string $key)
+    protected function fetchKey(?Node $node, string $key)
     {
-        if ($state === null) {
+        if ($node === null) {
             return null;
         }
 
-        return $state->getData()[$key] ?? null;
+        return $node->getData()[$key] ?? null;
     }
 
     /**

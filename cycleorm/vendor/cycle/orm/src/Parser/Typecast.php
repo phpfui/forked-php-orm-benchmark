@@ -41,19 +41,19 @@ final class Typecast implements TypecastInterface
     {
         try {
             foreach ($this->rules as $key => $rule) {
-                if (!array_key_exists($key, $values) || $values[$key] === null) {
+                if (!isset($values[$key])) {
                     continue;
                 }
 
                 switch ($rule) {
                     case 'int':
-                        $values[$key] = (int)$values[$key];
+                        $values[$key] = (int) $values[$key];
                         break;
                     case 'bool':
-                        $values[$key] = (bool)$values[$key];
+                        $values[$key] = (bool) $values[$key];
                         break;
                     case 'float':
-                        $values[$key] = (float)$values[$key];
+                        $values[$key] = (float) $values[$key];
                         break;
                     case 'datetime':
                         $values[$key] = new DateTimeImmutable(
