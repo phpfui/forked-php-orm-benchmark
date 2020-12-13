@@ -66,6 +66,10 @@ class CastingManager
 
     public function bool($value)
     {
+        if ($value === '0' || $value === '' || floatval($value) === 0) {
+            return false;
+        }
+
         return ! ! $value;
     }
 
@@ -82,12 +86,24 @@ class CastingManager
 
     public function float($value)
     {
-        return $value === null ? null : (float) $value;
+        return $value === null ? null : (float)$value;
     }
 
     public function decimal($value, $digits)
     {
         return round((float)$value, (int)$digits);
+    }
+
+    public function array($value)
+    {
+        if ($value === null) {
+            return null;
+        }
+        if (is_array($value)) {
+            return $value;
+        }
+
+        return json_decode((string) $value, true);
     }
 
     public function json($value)
@@ -110,7 +126,7 @@ class CastingManager
     // phpcs:ignore
     public function json_for_db($value)
     {
-        if (!$value) {
+        if (! $value) {
             return null;
         }
         if (is_array($value)) {
@@ -119,6 +135,13 @@ class CastingManager
         if ($value instanceof \ArrayObject) {
             return json_encode($value->getArrayCopy());
         }
+        if (is_object($value) && method_exists($value, 'toArray')) {
+            return json_encode($value->toArray());
+        }
+        if (is_object($value) && method_exists($value, 'getArrayCopy')) {
+            return json_encode($value->getArrayCopy());
+        }
+
         return $value;
     }
 }

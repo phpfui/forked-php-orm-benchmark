@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace Sirius\Orm\Entity;
 
 use Sirius\Orm\Collection\Collection;
+use Sirius\Orm\Contract\HydratorInterface;
 use Sirius\Orm\Mapper;
 use Sirius\Orm\Query;
 use Sirius\Orm\Relation\Aggregate;
@@ -38,19 +39,32 @@ class Tracker
      */
     protected $relationResults = [];
 
+    /**
+     * @var array
+     */
+    protected $aggregateResults = [];
+
+    /**
+     * @var array
+     */
+    protected $lazyAggregates = [];
+
+    /**
+     * @var array
+     */
+    protected $lazyRelations = [];
+
     public function __construct(array $rows = [])
     {
-        $this->rows   = $rows;
+        $this->rows = $rows;
     }
 
-    public function setRelation($name, Relation $relation, $callback, array $nextLoad = [], $overwrite = false)
+    public function setRelation($name, Relation $relation, $callback, array $nextLoad = [])
     {
-        if ($overwrite || ! isset($this->relations[$name])) {
-            $this->relations[$name]        = $relation;
-            $this->relationCallback[$name] = $callback;
-            if (!empty($nextLoad)) {
-                $this->relationNextLoad[$name] = $nextLoad;
-            }
+        $this->relations[$name]        = $relation;
+        $this->relationCallback[$name] = $callback;
+        if (! empty($nextLoad)) {
+            $this->relationNextLoad[$name] = $nextLoad;
         }
     }
 
@@ -85,39 +99,36 @@ class Tracker
         }
 
         /** @var Query $query */
-        $query         = $aggregate->getQuery($this);
+        $query = $aggregate->getQuery($this);
 
-        $results                      = $query->fetchAll();
+        $results                       = $query->fetchAll();
         $this->aggregateResults[$name] = $results instanceof Collection ? $results->getValues() : $results;
 
         return $this->aggregateResults[$name];
     }
 
-    public function pluck($columns)
+    public function pluck($columns, HydratorInterface $hydrator)
     {
         $result = [];
         foreach ($this->rows as $row) {
-            $value = $this->getColumnsFromRow($row, $columns);
-            if ($value && !in_array($value, $result)) {
+            $value = $this->getColumnsFromRow($row, $columns, $hydrator);
+            if ($value && ! in_array($value, $result)) {
                 $result[] = $value;
             }
         }
 
-        /**
-         * @todo check if array_unique() performs better
-         */
         return $result;
     }
 
-    protected function getColumnsFromRow($row, $columns)
+    protected function getColumnsFromRow($row, $columns, HydratorInterface $hydrator)
     {
         if (is_array($columns) && count($columns) > 1) {
             $result = [];
             foreach ($columns as $column) {
-                if ($row instanceof GenericEntity) {
-                    $result[] = $row->get($column);
-                } else {
+                if (is_array($row)) {
                     $result[] = $row[$column] ?? null;
+                } else {
+                    $result[] = $hydrator->get($row, $column);
                 }
             }
 
@@ -126,7 +137,27 @@ class Tracker
 
         $column = is_array($columns) ? $columns[0] : $columns;
 
-        return $row instanceof GenericEntity ? $row->get($column) : ($row[$column] ?? null);
+        return is_object($row) ? $hydrator->get($row, $column) : ($row[$column] ?? null);
+    }
+
+    public function getLazyAggregate(Aggregate $aggregate)
+    {
+        $name = $aggregate->getName();
+        if (! isset($this->lazyAggregates[$name])) {
+            $this->lazyAggregates[$name] = new LazyAggregate($this, $aggregate);
+        }
+
+        return $this->lazyAggregates[$name];
+    }
+
+    public function getLazyRelation(Relation $relation)
+    {
+        $name = $relation->getOption('name');
+        if (! isset($this->lazyRelations[$name])) {
+            $this->lazyRelations[$name] = new LazyRelation($this, $relation);
+        }
+
+        return $this->lazyRelations[$name];
     }
 
     /**
@@ -149,8 +180,17 @@ class Tracker
     {
         /** @var Relation $relation */
         $relation = $this->relations[$name];
-        /** @var Query $query */
+        /** @var Query|null $query */
         $query = $relation->getQuery($this);
+
+        /**
+         * query can be null if there are no entities to be retrieved
+         * this is when the native keys are `null` in which case
+         * there's no need for a query to be constructed and executed
+         */
+        if (!$query) {
+            return [];
+        }
 
         $queryCallback = $this->relationCallback[$name] ?? null;
         if ($queryCallback && is_callable($queryCallback)) {

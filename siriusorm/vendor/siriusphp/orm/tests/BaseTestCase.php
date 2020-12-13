@@ -3,79 +3,142 @@ declare(strict_types=1);
 
 namespace Sirius\Orm\Tests;
 
-use Sirius\Orm\Connection;
+use Doctrine\DBAL\Platforms\MySQL80Platform;
+use Doctrine\DBAL\Platforms\PostgreSQL92Platform;
+use Doctrine\DBAL\Platforms\SqlitePlatform;
+use Doctrine\DBAL\Schema\Schema;
+use League\Event\EventDispatcher;
 use PHPUnit\Framework\TestCase;
+use Sirius\Orm\Connection;
 use Sirius\Orm\ConnectionLocator;
+use Sirius\Orm\Helpers\Inflector;
+use Sirius\Orm\Helpers\Str;
+use Sirius\Orm\Mapper;
+use Sirius\Orm\MapperConfig;
 use Sirius\Orm\Orm;
 use Sirius\Sql\Insert;
 use Sirius\Sql\Select;
 
 class BaseTestCase extends TestCase
 {
+
+    protected $dbEngine = 'sqlite';
+
+    protected $useGeneratedMappers = true;
+
     /**
      * @var Orm
      */
     protected $orm;
+
     /**
      * @var Connection
      */
     protected $connection;
+
     /**
      * @var \Atlas\Pdo\ConnectionLocator|ConnectionLocator
      */
     protected $connectionLocator;
+    /**
+     * @var EventDispatcher
+     */
+    protected $eventDispatcher;
 
     public function setUp(): void
     {
         parent::setUp();
 
-        if (getenv('DB_ENGINE') == 'mysql') {
-            $connection = Connection::new('mysql:host=localhost;dbname=sirius_orm', 'root', '');
+        if ($this->dbEngine == 'mysql') {
+            $connection = Connection::new(getenv('MYSQL_CONNECTION'), getenv('MYSQL_USER'), getenv('MYSQL_PASS'));
+        } elseif ($this->dbEngine == 'postgres') {
+            $connection = Connection::new(getenv('POSTGRES_CONNECTION'), getenv('POSTGRES_USER'), getenv('POSTGRES_PASS'));
         } else {
             $connection = Connection::new('sqlite::memory:');
         }
 
-        $this->connection = $connection;
-        $connectionLocator = ConnectionLocator::new($this->connection);
+        $this->connection        = $connection;
+        $connectionLocator       = ConnectionLocator::new($this->connection);
         $this->connectionLocator = $connectionLocator;
-        $this->orm         = new Orm($connectionLocator);
-        $this->createTables(getenv('DB_ENGINE') ? getenv('DB_ENGINE') : 'generic');
+        $this->eventDispatcher   = new EventDispatcher();
+        $this->orm               = new Orm($connectionLocator, null, null, $this->eventDispatcher);
+        $this->createTables();
         $this->loadMappers();
         $connectionLocator->logQueries();
     }
 
-    public function createTables($fileName = 'generic')
+    public function createTables()
     {
-        foreach (include(__DIR__ . "/resources/tables/{$fileName}.php") as $sql) {
-            $this->connection->perform($sql);
+        $platform = new SqlitePlatform();
+        switch ($this->dbEngine) {
+            case 'mysql':
+                $platform = new MySQL80Platform();
+                break;
+            case 'postgres':
+                $platform = new PostgreSQL92Platform();
+                break;
+        }
+        /** @var Schema $schema */
+        $schema = include(__DIR__ . "/resources/schema.php");
+
+        $schemaCreatedPath = __DIR__ . '/' . $this->dbEngine . '_schema_created';
+        if (file_exists($schemaCreatedPath) && $this->dbEngine !== 'sqlite') {
+            foreach ($schema->getTables() as $table) {
+                $this->connection->perform('DELETE FROM ' . $table->getName());
+            }
+        } else {
+            foreach ($schema->getTables() as $table) {
+                $this->connection->perform('DROP TABLE IF EXISTS ' . $table->getName());
+            }
+            foreach ($schema->toSql($platform) as $table => $sql) {
+                $this->connection->perform($sql);
+            }
+            file_put_contents($schemaCreatedPath, '1');
         }
     }
 
     public function loadMappers()
     {
-        $this->orm->register('images', $this->getMapperConfig('images'));
-        $this->orm->register('tags', $this->getMapperConfig('tags'));
-        $this->orm->register('categories', $this->getMapperConfig('categories'));
-        $this->orm->register('products', $this->getMapperConfig('products'));
-        $this->orm->register('content_products', $this->getMapperConfig('content_products'));
+        $mappers           = ['products', 'cascade_products', 'ebay_products', 'categories', 'languages', 'images', 'tags', 'product_languages'];
+        $connectionLocator = $this->connectionLocator;
 
+        foreach ($mappers as $name) {
+            $this->orm->register($name, function ($orm) use ($name, $connectionLocator) {
+                $class = 'Sirius\\Orm\\Tests\\Generated\\Mapper\\' . Str::className(Inflector::singularize($name)) . 'Mapper';
+                /** @var Mapper $mapper */
+                $mapper = new $class($this->orm);
+
+                return $mapper;
+            });
+        }
     }
 
-    public function getMapperConfig($name)
+    public function getMapperConfig($name, callable $callback = null)
     {
-        return include(__DIR__ . '/resources/mappers/' . $name . '.php');
+        $mappers = include(__DIR__ . '/resources/mappers.php');
+        $arr     = $mappers[$name];
+        if ($callback) {
+            $arr = $callback($arr);
+        }
+
+        return MapperConfig::fromArray($arr);
     }
 
     protected function insertRow($table, $values)
     {
         $insert = new Insert($this->connection);
+        foreach ($values as $col => $value) {
+            if (is_array($value)) {
+                $values[$col] = json_encode($value);
+            }
+        }
         $insert->into($table)->columns($values);
         $this->connection->perform($insert->getStatement(), $insert->getBindValues());
     }
 
-    public function assertExpectedQueries($expected)
+    public function assertExpectedQueries($expected, $transactionsCount = 0)
     {
-        $this->assertEquals($expected, count($this->connectionLocator->getQueries()));
+        $this->assertEquals($expected + $transactionsCount * 2, $this->getQueryCount());
     }
 
     public function assertRowDeleted($table, ...$conditions)
@@ -114,10 +177,18 @@ class BaseTestCase extends TestCase
         $str = preg_replace('/^[ \t]*/m', '', $str);
         $str = preg_replace('/[ \t]*$/m', '', $str);
         $str = preg_replace('/[ ]{2,}/m', ' ', $str);
-        $str = preg_replace('/[\r\n|\n|\r]+/', ' ', $str);
+        $str = preg_replace('/[\r\n|\n|\r ]+/', ' ', $str);
         $str = str_replace('( ', '(', $str);
         $str = str_replace(' )', ')', $str);
 
         return $str;
+    }
+
+    /**
+     * @return int
+     */
+    protected function getQueryCount(): int
+    {
+        return count($this->connectionLocator->getQueries());
     }
 }

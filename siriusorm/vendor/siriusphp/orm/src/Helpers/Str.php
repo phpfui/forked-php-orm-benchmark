@@ -13,9 +13,10 @@ class Str
         'className'    => [],
     ];
 
-    public static function underscore($str)
+    public static function underscore(string $str): string
     {
         if (! isset(static::$cache['underscore'][$str])) {
+            $str = preg_replace("/([A-Z]+)/", ' $1', $str);
             $str = strtolower($str);
             $str = preg_replace("/[^a-z0-9]+/", ' ', $str);
 
@@ -25,7 +26,7 @@ class Str
         return static::$cache['underscore'][$str];
     }
 
-    public static function methodName($str, $verb)
+    public static function methodName(string $str, string $verb): string
     {
         $key = $verb . $str;
         if (! isset(static::$cache['methodName'][$key])) {
@@ -35,7 +36,7 @@ class Str
         return static::$cache['methodName'][$key];
     }
 
-    public static function variableName($str)
+    public static function variableName(string $str): string
     {
         if (! isset(static::$cache['variableName'][$str])) {
             $class = static::className($str);
@@ -46,7 +47,7 @@ class Str
         return static::$cache['variableName'][$str];
     }
 
-    public static function className($str)
+    public static function className(string $str): string
     {
         if (! isset(static::$cache['className'][$str])) {
             $str = strtolower($str);

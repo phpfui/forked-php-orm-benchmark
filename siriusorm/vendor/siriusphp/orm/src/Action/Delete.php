@@ -16,17 +16,21 @@ class Delete extends BaseAction
         }
 
         $delete = new \Sirius\Sql\Delete($this->mapper->getWriteConnection());
-        $delete->from($this->mapper->getTable());
+        $delete->from($this->mapper->getConfig()->getTable());
         $delete->whereAll($conditions, false);
 
         $delete->perform();
     }
 
+    /**
+     * Unsets the entity's PK and sets its state to `deleted`
+     * @return mixed|void
+     */
     public function onSuccess()
     {
-        if ($this->entity->getPersistenceState() !== StateEnum::DELETED) {
-            $this->entity->setPk(null);
-            $this->entity->setPersistenceState(StateEnum::DELETED);
+        $this->entityHydrator->setPk($this->entity, null);
+        if ($this->entity->getState() !== StateEnum::DELETED) {
+            $this->entity->setState(StateEnum::DELETED);
         }
     }
 }

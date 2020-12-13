@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace Sirius\Orm;
 
 use Sirius\Orm\Entity\GenericEntity;
-use Sirius\Orm\Entity\HydratorInterface;
+use Sirius\Orm\Helpers\QueryHelper;
 
 /**
  * Class MapperConfig
@@ -16,86 +16,78 @@ class MapperConfig
 {
     const ENTITY_CLASS = 'entityClass';
     const PRIMARY_KEY = 'primaryKey';
+    const NAME = 'name';
     const TABLE = 'table';
     const TABLE_ALIAS = 'tableAlias';
     const COLUMNS = 'columns';
     const COLUMN_ATTRIBUTE_MAP = 'columnAttributeMap';
     const CASTS = 'casts';
-    const DEFAULT_ATTRIBUTES = 'entityDefaultAttributes';
-    const ENTITY_HYDRATOR = 'entityHydrator';
-    const BEHAVIOURS = 'behaviours';
-    const RELATIONS = 'relations';
-    const SCOPES = 'scopes';
+    const PIVOT_ATTRIBUTES = 'pivotAttributes';
+    const ATTRIBUTE_DEFAULTS = 'attributeDefaults';
     const GUARDS = 'guards';
-
-    public $entityClass = GenericEntity::class;
-
-    public $primaryKey = 'id';
 
     /**
      * @var string
      */
-    public $table;
+    protected $entityClass = GenericEntity::class;
+
+    /**
+     * @var string|array
+     */
+    protected $primaryKey = 'id';
+
+    /**
+     * @var string
+     */
+    protected $table;
 
     /**
      * Used in queries like so: FROM table as tableAlias
      * @var string
      */
-    public $tableAlias;
+    protected $tableAlias;
+
+    /**
+     * @var
+     */
+    protected $tableReference;
 
     /**
      * Table columns
      * @var array
      */
-    public $columns = [];
+    protected $columns = [];
 
     /**
      * Columns casts
      * @var array
      */
-    public $casts = [];
+    protected $casts = [];
 
     /**
      * Column aliases (table column => entity attribute)
      * @var array
      */
-    public $columnAttributeMap = [];
+    protected $columnAttributeMap = [];
 
     /**
-     * @var null|HydratorInterface
+     * Attributes that might come from PIVOT_COLUMNS
+     * in many-to-many relations
+     * @var array
      */
-    public $entityHydrator = null;
+    protected $pivotAttributes = [];
 
     /**
      * Default attributes
      * @var array
      */
-    public $entityDefaultAttributes = [];
-
-    /**
-     * List of behaviours to be attached to the mapper
-     * @var array[BehaviourInterface]
-     */
-    public $behaviours = [];
-
-    /**
-     * List of relations of the configured mapper
-     * (key = name of relation, value = relation instance)
-     * @var array[BaseRelation]
-     */
-    public $relations = [];
-
-    /**
-     * List of query callbacks that can be called directly from the query
-     * @var array
-     */
-    public $scopes = [];
+    protected $attributeDefaults = [];
 
     /**
      * List of column-value pairs that act as global filters
      * @var array
      */
-    public $guards = [];
+    protected $guards = [];
 
     public static function fromArray(array $array)
     {
@@ -105,5 +97,90 @@ class MapperConfig
         }
 
         return $instance;
+    }
+
+    /**
+     * @return string
+     */
+    public function getEntityClass(): string
+    {
+        return $this->entityClass;
+    }
+
+    /**
+     * @return string|array
+     */
+    public function getPrimaryKey()
+    {
+        return $this->primaryKey;
+    }
+
+    /**
+     * @return string
+     */
+    public function getTable(): string
+    {
+        return $this->table;
+    }
+
+    /**
+     * @param bool $fallbackToTable
+     *
+     * @return string
+     */
+    public function getTableAlias($fallbackToTable = false)
+    {
+        return (! $this->tableAlias && $fallbackToTable) ? $this->table : $this->tableAlias;
+    }
+
+    public function getColumns(): array
+    {
+        return $this->columns;
+    }
+
+    public function getPivotAttributes(): array
+    {
+        return $this->pivotAttributes;
+    }
+
+
+    public function getAttributeNames(): array
+    {
+        $columns = array_combine($this->columns, $this->columns);
+        foreach ($this->getColumnAttributeMap() as $col => $attr) {
+            $columns[$col] = $attr;
+        }
+
+        return array_merge(array_values($columns), $this->getPivotAttributes());
+    }
+
+    public function getCasts(): array
+    {
+        return $this->casts;
+    }
+
+    public function getColumnAttributeMap(): array
+    {
+        return $this->columnAttributeMap;
+    }
+
+
+    public function getAttributeDefaults(): array
+    {
+        return $this->attributeDefaults;
+    }
+
+    public function getGuards(): array
+    {
+        return $this->guards;
+    }
+
+    public function getTableReference()
+    {
+        if (! $this->tableReference) {
+            $this->tableReference = QueryHelper::reference($this->table, $this->tableAlias);
+        }
+
+        return $this->tableReference;
     }
 }

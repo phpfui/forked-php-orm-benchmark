@@ -28,16 +28,25 @@ $orm->getCastingManager()
     });
 ```
 
-and if you use the `GenericEntity`-based entities
+Since an entity attribute must also be serialized back when persisting to the DB, you need to define a "cast_for_db" function like so
+```php
+use Carbon\Carbon;
+
+$orm->getCastingManager()
+    ->register('date_for_db', function($value) {
+        if ($value instanceof Carbon) {
+            return $value->format('%Y-%m-%d');
+        }
+        return (string) $value;
+    });
+```
+
+In this situation the entity's attribute that will behave like this will have to be defined like so
 
 ```php
-use Sirius\Orm\Entity\GenericEntity;
-
-class Page extends GenericEntity {
-    protected $casts = ['published_at' => 'date'];
-}
-
-
-
-
+$mapperDefinitions->addColumn(
+    Column::date('published_at')
+        ->setAttributeCast('date')
+        ->setAttributeType(Carbon\Carbon::class)
+);
 ```

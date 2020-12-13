@@ -3,14 +3,11 @@ declare(strict_types=1);
 
 namespace Sirius\Orm\Entity;
 
+use Sirius\Orm\Contract\LazyLoader;
 use Sirius\Orm\Relation\Relation;
 
 class LazyRelation implements LazyLoader
 {
-    /**
-     * @var EntityInterface
-     */
-    protected $entity;
     /**
      * @var Tracker
      */
@@ -20,16 +17,15 @@ class LazyRelation implements LazyLoader
      */
     protected $relation;
 
-    public function __construct(EntityInterface $entity, Tracker $tracker, Relation $relation)
+    public function __construct(Tracker $tracker, Relation $relation)
     {
-        $this->entity   = $entity;
         $this->tracker  = $tracker;
         $this->relation = $relation;
     }
 
-    public function load()
+    public function getForEntity($entity)
     {
         $results = $this->tracker->getResultsForRelation($this->relation->getOption('name'));
-        $this->relation->attachMatchesToEntity($this->entity, $results);
+        $this->relation->attachMatchesToEntity($entity, $results);
     }
 }

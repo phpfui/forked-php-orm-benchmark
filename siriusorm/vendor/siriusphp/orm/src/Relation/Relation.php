@@ -7,15 +7,15 @@ use Sirius\Orm\Action\AttachEntities;
 use Sirius\Orm\Action\BaseAction;
 use Sirius\Orm\Action\Delete;
 use Sirius\Orm\Action\DetachEntities;
+use Sirius\Orm\Action\Insert;
 use Sirius\Orm\Action\Update;
-use Sirius\Orm\Entity\EntityInterface;
-use Sirius\Orm\Entity\LazyRelation;
+use Sirius\Orm\Contract\EntityInterface;
+use Sirius\Orm\Contract\HydratorInterface;
 use Sirius\Orm\Entity\Tracker;
 use Sirius\Orm\Helpers\Arr;
 use Sirius\Orm\Helpers\QueryHelper;
 use Sirius\Orm\Mapper;
 use Sirius\Orm\Query;
-use Sirius\Sql\Select;
 
 abstract class Relation
 {
@@ -41,24 +41,37 @@ abstract class Relation
     protected $options = [];
 
     /**
+     * Stores the nativeColumn-foreignColumn pairs to be used on queries
      * @var array
      */
     protected $keyPairs;
 
+    /**
+     * @var HydratorInterface
+     */
+    protected $nativeEntityHydrator;
+
+    /**
+     * @var HydratorInterface
+     */
+    protected $foreignEntityHydrator;
+
     public function __construct($name, Mapper $nativeMapper, Mapper $foreignMapper, array $options = [])
     {
-        $this->name          = $name;
         $this->nativeMapper  = $nativeMapper;
         $this->foreignMapper = $foreignMapper;
+        $this->name          = $name;
         $this->options       = $options;
         $this->applyDefaults();
         $this->keyPairs = $this->computeKeyPairs();
+
+        $this->nativeEntityHydrator  = $nativeMapper->getHydrator();
+        $this->foreignEntityHydrator = $foreignMapper->getHydrator();
     }
 
     protected function applyDefaults(): void
     {
         $this->setOptionIfMissing(RelationConfig::LOAD_STRATEGY, RelationConfig::LOAD_LAZY);
-        $this->setOptionIfMissing(RelationConfig::CASCADE, false);
     }
 
     protected function setOptionIfMissing($name, $value)
@@ -85,33 +98,6 @@ abstract class Relation
         return $this->keyPairs;
     }
 
-    /**
-     * Checks if a native entity belongs and a foreign entity belong together according to this relation
-     * It verifies if the attributes are properly linked
-     *
-     * @param EntityInterface $nativeEntity
-     * @param EntityInterface $foreignEntity
-     *
-     * @return mixed
-     */
-    public function entitiesBelongTogether(EntityInterface $nativeEntity, EntityInterface $foreignEntity)
-    {
-        /**
-         * @todo make this method protected
-         */
-        foreach ($this->keyPairs as $nativeCol => $foreignCol) {
-            $nativeKeyValue  = $this->nativeMapper->getEntityAttribute($nativeEntity, $nativeCol);
-            $foreignKeyValue = $this->foreignMapper->getEntityAttribute($foreignEntity, $foreignCol);
-            // if both native and foreign key values are present (not unlinked entities) they must be the same
-            // otherwise we assume that the entities can be linked together
-            if ($nativeKeyValue && $foreignKeyValue && $nativeKeyValue != $foreignKeyValue) {
-                return false;
-            }
-        }
-
-        return true;
-    }
-
     public function isEagerLoad()
     {
         return $this->options[RelationConfig::LOAD_STRATEGY] == RelationConfig::LOAD_EAGER;
@@ -129,7 +115,7 @@ abstract class Relation
 
     protected function getKeyColumn($name, $column)
     {
-        if (!is_array($column)) {
+        if (! is_array($column)) {
             return $name . '_' . $column;
         }
 
@@ -164,18 +150,22 @@ abstract class Relation
 
     public function attachLazyRelationToEntity(EntityInterface $entity, Tracker $tracker)
     {
-        $valueLoader = new LazyRelation($entity, $tracker, $this);
-        $this->nativeMapper->setEntityAttribute($entity, $this->name, $valueLoader);
+        $valueLoader = $tracker->getLazyRelation($this);
+        $this->nativeEntityHydrator->set($entity, $this->name, $valueLoader);
     }
 
     public function getQuery(Tracker $tracker)
     {
         $nativeKey = $this->options[RelationConfig::NATIVE_KEY];
-        $nativePks = $tracker->pluck($nativeKey);
+        $nativePks = $tracker->pluck($nativeKey, $this->nativeEntityHydrator);
+
+        if (empty($nativePks)) {
+            return null;
+        }
 
         $query = $this->foreignMapper
             ->newQuery()
-            ->where($this->foreignMapper->getPrimaryKey(), $nativePks);
+            ->where($this->foreignMapper->getConfig()->getPrimaryKey(), $nativePks);
 
         $query = $this->applyQueryCallback($query);
 
@@ -190,7 +180,7 @@ abstract class Relation
 
         foreach ($entities as $entity) {
             $entityId = $this->getEntityId($this->foreignMapper, $entity, array_values($this->keyPairs));
-            if (!isset($result[$entityId])) {
+            if (! isset($result[$entityId])) {
                 $result[$entityId] = [];
             }
             $result[$entityId][] = $entity;
@@ -203,8 +193,9 @@ abstract class Relation
     {
         $entityKeys = [];
         foreach ($keyColumns as $col) {
-            $entityKeys[] = $mapper->getEntityAttribute($entity, $col);
+            $entityKeys[] = $mapper->getHydrator()->get($entity, $col);
         }
+
         return implode('-', $entityKeys);
     }
 
@@ -270,7 +261,9 @@ abstract class Relation
     {
         if ($actionType == 'delete') {
             return new DetachEntities(
+                $this->nativeMapper,
                 $nativeEntity,
+                $this->foreignMapper,
                 $foreignEntity,
                 $this,
                 'save'
@@ -278,7 +271,9 @@ abstract class Relation
         }
 
         return new AttachEntities(
+            $this->nativeMapper,
             $nativeEntity,
+            $this->foreignMapper,
             $foreignEntity,
             $this,
             'save'
@@ -292,7 +287,7 @@ abstract class Relation
         return isset($changes[$this->name]) && $changes[$this->name];
     }
 
-    protected function applyQueryCallback(Select $query)
+    protected function applyQueryCallback(Query $query)
     {
         $queryCallback = $this->getOption(RelationConfig::QUERY_CALLBACK);
         if ($queryCallback && is_callable($queryCallback)) {
@@ -302,7 +297,7 @@ abstract class Relation
         return $query;
     }
 
-    protected function applyForeignGuards(Select $query)
+    protected function applyForeignGuards(Query $query)
     {
         $guards = $this->getOption(RelationConfig::FOREIGN_GUARDS);
         if ($guards) {
@@ -315,7 +310,7 @@ abstract class Relation
     protected function getJoinOnForSubselect()
     {
         return QueryHelper::joinCondition(
-            $this->nativeMapper->getTableAlias(true),
+            $this->nativeMapper->getConfig()->getTableAlias(true),
             $this->getOption(RelationConfig::NATIVE_KEY),
             $this->name,
             $this->getOption(RelationConfig::FOREIGN_KEY)

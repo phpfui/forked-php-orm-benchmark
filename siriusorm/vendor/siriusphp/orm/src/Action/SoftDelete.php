@@ -7,22 +7,19 @@ use Sirius\Orm\Entity\StateEnum;
 
 class SoftDelete extends Delete
 {
-    /**
-     * @var int
-     */
     protected $now;
 
     protected function execute()
     {
-        $entityId = $this->entity->getPk();
+        $entityId = $this->entityHydrator->getPk($this->entity);
         if (! $entityId) {
             return;
         }
 
-        $this->now = time();
+        $this->now = date('Y-m-d H:i:s', time());
 
         $update = new \Sirius\Sql\Update($this->mapper->getWriteConnection());
-        $update->table($this->mapper->getTable())
+        $update->table($this->mapper->getConfig()->getTable())
                ->columns([
                    $this->getOption('deleted_at_column') => $this->now
                ])
@@ -32,9 +29,9 @@ class SoftDelete extends Delete
 
     public function onSuccess()
     {
-        $this->mapper->setEntityAttribute($this->entity, $this->getOption('deleted_at_column'), $this->now);
-        if ($this->entity->getPersistenceState() !== StateEnum::DELETED) {
-            $this->entity->setPersistenceState(StateEnum::DELETED);
+        $this->entityHydrator->set($this->entity, $this->getOption('deleted_at_column'), $this->now);
+        if ($this->entity->getState() !== StateEnum::DELETED) {
+            $this->entity->setState(StateEnum::DELETED);
         }
     }
 }

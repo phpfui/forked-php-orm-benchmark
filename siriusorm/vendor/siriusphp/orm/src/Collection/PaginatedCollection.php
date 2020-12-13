@@ -3,15 +3,17 @@ declare(strict_types=1);
 
 namespace Sirius\Orm\Collection;
 
+use Sirius\Orm\Contract\HydratorInterface;
+
 class PaginatedCollection extends Collection
 {
     protected $totalCount;
     protected $perPage;
     protected $currentPage;
 
-    public function __construct(array $elements, int $totalCount, int $perPage, int $currentPage)
+    public function __construct(array $elements, int $totalCount, int $perPage, int $currentPage, HydratorInterface $hydrator)
     {
-        parent::__construct($elements);
+        parent::__construct($elements, $hydrator);
         $this->totalCount  = $totalCount;
         $this->perPage     = $perPage;
         $this->currentPage = $currentPage;

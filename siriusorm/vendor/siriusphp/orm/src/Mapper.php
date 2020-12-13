@@ -3,91 +3,40 @@ declare(strict_types=1);
 
 namespace Sirius\Orm;
 
-use Sirius\Orm\Action\BaseAction;
-use Sirius\Orm\Action\Delete;
-use Sirius\Orm\Action\Insert;
-use Sirius\Orm\Action\Update;
 use Sirius\Orm\Behaviour\BehaviourInterface;
 use Sirius\Orm\Collection\Collection;
-use Sirius\Orm\Collection\PaginatedCollection;
-use Sirius\Orm\Entity\Behaviours;
-use Sirius\Orm\Entity\EntityInterface;
-use Sirius\Orm\Entity\GenericEntity;
-use Sirius\Orm\Entity\GenericEntityHydrator;
-use Sirius\Orm\Entity\HydratorInterface;
-use Sirius\Orm\Entity\StateEnum;
-use Sirius\Orm\Entity\Tracker;
-use Sirius\Orm\Helpers\Arr;
-use Sirius\Orm\Helpers\Inflector;
-use Sirius\Orm\Helpers\QueryHelper;
-use Sirius\Orm\Relation\Aggregate;
+use Sirius\Orm\Contract\EntityInterface;
+use Sirius\Orm\Contract\HydratorInterface;
+use Sirius\Orm\Entity\GenericHydrator;
+use Sirius\Orm\Entity\Patcher;
 use Sirius\Orm\Relation\Relation;
-use Sirius\Orm\Relation\RelationConfig;
+use Sirius\Sql\Bindings;
 
 /**
- * @method array where($column, $value, $condition)
- * @method array columns(string $expr, string ...$exprs)
- * @method array orderBy(string $expr, string ...$exprs)
+ * @method Query where($column, $value, $condition)
+ * @method Query orderBy(string $expr, string ...$exprs)
  */
 class Mapper
 {
     /**
-     * Name of the class/interface to be used to determine
-     * if this mapper can persist a specific entity
-     * @var string
+     * @var Orm
      */
-    protected $entityClass = GenericEntity::class;
+    protected $orm;
 
     /**
-     * @var string|array
+     * @var ConnectionLocator
      */
-    protected $primaryKey = 'id';
+    protected $connectionLocator;
 
     /**
-     * @var string
+     * @var MapperConfig
      */
-    protected $table;
-
-    /**
-     * Used in queries like so: FROM table as tableAlias
-     * This is especially useful if you are using prefixed tables
-     * @var string
-     */
-    protected $tableAlias = '';
-
-    /**
-     * @var string
-     */
-    protected $tableReference;
-
-    /**
-     * Table columns
-     * @var array
-     */
-    protected $columns = [];
-
-    /**
-     * Column casts
-     * @var array
-     */
-    protected $casts = ['id' => 'int'];
-
-    /**
-     * Column aliases (table column => entity attribute)
-     * @var array
-     */
-    protected $columnAttributeMap = [];
+    protected $mapperConfig;
 
     /**
      * @var HydratorInterface
      */
-    protected $entityHydrator;
-
-    /**
-     * Default attributes
-     * @var array
-     */
-    protected $entityDefaultAttributes = [];
+    protected $hydrator;
 
     /**
      * @var Behaviours
@@ -99,90 +48,46 @@ class Mapper
      */
     protected $relations = [];
 
-    /**
-     * @var array
-     */
-    protected $scopes = [];
-
-    /**
-     * @var array
-     */
-    protected $guards = [];
-
-    /**
-     * @var QueryBuilder
-     */
-    protected $queryBuilder;
-
-    /**
-     * @var Orm
-     */
-    protected $orm;
-
-    public static function make(Orm $orm, MapperConfig $mapperConfig)
+    public function __construct(Orm $orm)
     {
-        $mapper                          = new static($orm, $mapperConfig->entityHydrator);
-        $mapper->table                   = $mapperConfig->table;
-        $mapper->tableAlias              = $mapperConfig->tableAlias;
-        $mapper->primaryKey              = $mapperConfig->primaryKey;
-        $mapper->columns                 = $mapperConfig->columns;
-        $mapper->entityDefaultAttributes = $mapperConfig->entityDefaultAttributes;
-        $mapper->columnAttributeMap      = $mapperConfig->columnAttributeMap;
-        $mapper->scopes                  = $mapperConfig->scopes;
-        $mapper->guards                  = $mapperConfig->guards;
-        $mapper->tableReference          = QueryHelper::reference($mapper->table, $mapper->tableAlias);
-
-        if (isset($mapperConfig->casts) && !empty($mapperConfig->casts)) {
-            $mapper->casts = $mapperConfig->casts;
-        }
-
-        if (!empty($mapperConfig->relations)) {
-            $mapper->relations = array_merge($mapper->relations, $mapperConfig->relations);
-        }
-
-        if ($mapperConfig->entityClass) {
-            $mapper->entityClass = $mapperConfig->entityClass;
-        }
-
-        if (isset($mapperConfig->behaviours) && ! empty($mapperConfig->behaviours)) {
-            $mapper->use(...$mapperConfig->behaviours);
-        }
-
-        return $mapper;
+        $this->orm               = $orm;
+        $this->connectionLocator = $orm->getConnectionLocator();
+        $this->behaviours        = new Behaviours();
+        $this->hydrator          = new GenericHydrator($this->orm->getCastingManager());
+        $this->init();
     }
 
-    public function __construct(Orm $orm, HydratorInterface $entityHydrator = null, QueryBuilder $queryBuilder = null)
+    protected function init()
     {
-        $this->orm = $orm;
-
-        if (! $entityHydrator) {
-            $entityHydrator = new GenericEntityHydrator();
-            $entityHydrator->setMapper($this);
-            $entityHydrator->setCastingManager($orm->getCastingManager());
-        }
-        $this->entityHydrator = $entityHydrator;
-
-        if (! $queryBuilder) {
-            $queryBuilder = QueryBuilder::getInstance();
-        }
-        $this->queryBuilder = $queryBuilder;
-        $this->behaviours = new Behaviours();
     }
 
     public function __call(string $method, array $params)
     {
         switch ($method) {
             case 'where':
-            case 'where':
-            case 'columns':
             case 'orderBy':
                 $query = $this->newQuery();
 
                 return $query->{$method}(...$params);
         }
 
+        throw new \BadMethodCallException("Unknown method {$method} for class " . get_class($this));
+    }
 
-        throw new \BadMethodCallException('Unknown method {$method} for class ' . get_class($this));
+    /**
+     * @return MapperConfig
+     */
+    public function getConfig(): MapperConfig
+    {
+        return $this->mapperConfig;
+    }
+
+    /**
+     * @return HydratorInterface
+     */
+    public function getHydrator(): HydratorInterface
+    {
+        return $this->hydrator;
     }
 
     /**
@@ -192,267 +97,76 @@ class Mapper
      */
     public function use(...$behaviours)
     {
+        /** @var BehaviourInterface $behaviour */
         foreach ($behaviours as $behaviour) {
             $this->behaviours->add($behaviour);
         }
     }
 
+    /**
+     * Create a clone of the mapper without the selected behaviour
+     *
+     * @param mixed ...$behaviours
+     *
+     * @return self
+     */
     public function without(...$behaviours)
     {
-        $mapper = clone $this;
+        $mapper             = clone $this;
         $mapper->behaviours = $this->behaviours->without(...$behaviours);
 
         return $mapper;
     }
 
-    public function addQueryScope($scope, callable $callback)
-    {
-        $this->scopes[$scope] = $callback;
-    }
-
-    public function getQueryScope($scope)
-    {
-        return $this->scopes[$scope] ?? null;
-    }
-
-    public function registerCasts(CastingManager $castingManager)
-    {
-        $mapper = $this;
-
-        $singular = Inflector::singularize($this->getTableAlias(true));
-        $castingManager->register($singular, function ($value) use ($mapper) {
-            if ($value instanceof $this->entityClass) {
-                return $value;
-            }
-
-            return $value !== null ? $mapper->newEntity($value) : null;
-        });
-
-        $plural = $this->getTableAlias(true);
-        $castingManager->register($plural, function ($values) use ($mapper) {
-            if ($values instanceof Collection) {
-                return $values;
-            }
-            $collection = new Collection();
-            if (is_array($values)) {
-                foreach ($values as $value) {
-                    $collection->add($mapper->newEntity($value));
-                }
-            }
-
-            return $collection;
-        });
-    }
-
-    /**
-     * @return array|string
-     */
-    public function getPrimaryKey()
-    {
-        return $this->primaryKey;
-    }
-
-    /**
-     * @return string
-     */
-    public function getTable(): string
-    {
-        return $this->table;
-    }
-
-    /**
-     * @return string
-     */
-    public function getTableAlias($returnTableIfNull = false)
-    {
-        return (! $this->tableAlias && $returnTableIfNull) ? $this->table : $this->tableAlias;
-    }
-
-    public function getTableReference()
-    {
-        if (!$this->tableReference) {
-            $this->tableReference = QueryHelper::reference($this->table, $this->tableAlias);
-        }
-
-        return $this->tableReference;
-    }
-
-    /**
-     * @return array
-     */
-    public function getColumns(): array
-    {
-        return $this->columns;
-    }
-
-    /**
-     * @return array
-     */
-    public function getColumnAttributeMap(): array
-    {
-        return $this->columnAttributeMap;
-    }
-
-    /**
-     * @return string
-     */
-    public function getEntityClass(): string
-    {
-        return $this->entityClass;
-    }
-
-    /**
-     * @return array
-     */
-    public function getGuards(): array
-    {
-        return $this->guards;
-    }
-
-    /**
-     * @param $data
-     *
-     * @return EntityInterface
-     */
     public function newEntity(array $data): EntityInterface
     {
-        $entity = $this->entityHydrator->hydrate(array_merge($this->getEntityDefaults(), $data));
+        $entity = $this->getHydrator()
+                       ->hydrate(array_merge(
+                           $this->getConfig()->getAttributeDefaults(),
+                           $data
+                       ));
 
         return $this->behaviours->apply($this, __FUNCTION__, $entity);
     }
 
-    public function extractFromEntity(EntityInterface $entity): array
-    {
-        $data = $this->entityHydrator->extract($entity);
-
-        return $this->behaviours->apply($this, __FUNCTION__, $data);
-    }
-
-    public function newEntityFromRow(array $data = null, array $load = [], Tracker $tracker = null)
-    {
-        if ($data == null) {
-            return null;
-        }
-
-        $receivedTracker = ! ! $tracker;
-        if (! $tracker) {
-            $receivedTracker = false;
-            $tracker         = new Tracker([$data]);
-        }
-
-        $entity = $this->newEntity($data);
-        $this->injectRelations($entity, $tracker, $load);
-        $this->injectAggregates($entity, $tracker, $load);
-        $entity->setPersistenceState(StateEnum::SYNCHRONIZED);
-
-        if (! $receivedTracker) {
-            $tracker->replaceRows([$entity]);
-        }
-
-        return $entity;
-    }
-
-    public function newCollectionFromRows(array $rows, array $load = []): Collection
+    public function newCollection(array $datas = []): Collection
     {
         $entities = [];
-        $tracker  = new Tracker($rows);
-        foreach ($rows as $row) {
-            $entity     = $this->newEntityFromRow($row, $load, $tracker);
-            $entities[] = $entity;
+        foreach ($datas as $data) {
+            // if $data is an entity or some other object, keep it as is
+            $entities[] = (is_array($data)) ? $this->newEntity($data) : $data;
         }
-        $tracker->replaceRows($entities);
 
-        return new Collection($entities);
+        return new Collection($entities, $this->hydrator);
     }
 
-    public function newPaginatedCollectionFromRows(
-        array $rows,
-        int $totalCount,
-        int $perPage,
-        int $currentPage,
-        array $load = []
-    ): PaginatedCollection {
-        $entities = [];
-        $tracker  = new Tracker($rows);
-        foreach ($rows as $row) {
-            $entity     = $this->newEntityFromRow($row, $load, $tracker);
-            $entities[] = $entity;
-        }
-        $tracker->replaceRows($entities);
-
-        return new PaginatedCollection($entities, $totalCount, $perPage, $currentPage);
-    }
-
-    protected function injectRelations(EntityInterface $entity, Tracker $tracker, array $eagerLoad = [])
+    public function patch($entity, array $data)
     {
-        foreach (array_keys($this->relations) as $name) {
-            $relation      = $this->getRelation($name);
-            $queryCallback = $eagerLoad[$name] ?? null;
-            $nextLoad      = Arr::getChildren($eagerLoad, $name);
-
-            if (! $tracker->hasRelation($name)) {
-                $tracker->setRelation($name, $relation, $queryCallback, $nextLoad);
-            }
-
-            if (array_key_exists($name, $eagerLoad) || in_array($name, $eagerLoad) || $relation->isEagerLoad()) {
-                $relation->attachMatchesToEntity($entity, $tracker->getResultsForRelation($name));
-            } elseif ($relation->isLazyLoad()) {
-                $relation->attachLazyRelationToEntity($entity, $tracker);
-            }
-        }
+        return (new Patcher($this))($entity, $data);
     }
 
-    protected function injectAggregates(EntityInterface $entity, Tracker $tracker, array $eagerLoad = [])
-    {
-        foreach (array_keys($this->relations) as $name) {
-            $relation      = $this->getRelation($name);
-            if (!method_exists($relation, 'getAggregates')) {
-                continue;
-            }
-            $aggregates = $relation->getAggregates();
-            foreach ($aggregates as $aggName => $aggregate) {
-                /** @var $aggregate Aggregate */
-                if (array_key_exists($aggName, $eagerLoad) || $aggregate->isEagerLoad()) {
-                    $aggregate->attachAggregateToEntity($entity, $tracker->getAggregateResults($aggregate));
-                } elseif ($aggregate->isLazyLoad()) {
-                    $aggregate->attachLazyAggregateToEntity($entity, $tracker);
-                }
-            }
-        }
-    }
-
-    protected function getEntityDefaults()
-    {
-        return $this->entityDefaultAttributes;
-    }
-
-    public function setEntityAttribute(EntityInterface $entity, $attribute, $value)
-    {
-        return $entity->set($attribute, $value);
-    }
-
-    public function getEntityAttribute(EntityInterface $entity, $attribute)
-    {
-        return $entity->get($attribute);
-    }
-
-    public function addRelation($name, $relation)
+    /**
+     * @param string $name
+     * @param array|Relation $relation
+     */
+    public function addRelation(string $name, $relation)
     {
         if (is_array($relation) || $relation instanceof Relation) {
             $this->relations[$name] = $relation;
+
             return;
         }
         throw new \InvalidArgumentException(
-            sprintf('The relation has to be an Relation instance or an array of configuration options')
+            sprintf('The relation has to be a Relation instance or an array of configuration options')
         );
     }
 
-    public function hasRelation($name): bool
+    public function hasRelation(string $name): bool
     {
         return isset($this->relations[$name]);
     }
 
-    public function getRelation($name): Relation
+    public function getRelation(string $name): Relation
     {
         if (! $this->hasRelation($name)) {
             throw new \InvalidArgumentException("Relation named {$name} is not registered for this mapper");
@@ -461,12 +175,8 @@ class Mapper
         if (is_array($this->relations[$name])) {
             $this->relations[$name] = $this->orm->createRelation($this, $name, $this->relations[$name]);
         }
-        $relation = $this->relations[$name];
-        if (! $relation instanceof Relation) {
-            throw new \InvalidArgumentException("Relation named {$name} is not a proper Relation instance");
-        }
 
-        return $relation;
+        return $this->relations[$name];
     }
 
     public function getRelations(): array
@@ -474,64 +184,33 @@ class Mapper
         return array_keys($this->relations);
     }
 
-    public function newQuery(): Query
+    public function newQuery()
     {
-        $query = $this->queryBuilder->newQuery($this);
+        $query = new Query($this->getReadConnection(), $this);
 
         return $this->behaviours->apply($this, __FUNCTION__, $query);
     }
 
-    public function find($pk, array $load = [])
+    public function newSubselectQuery(Connection $connection, Bindings $bindings, string $indent)
     {
-        return $this->newQuery()
-                    ->where($this->getPrimaryKey(), $pk)
-                    ->load(...$load)
-                    ->first();
+        $query = new Query($connection, $this, $bindings, $indent);
+
+        return $this->behaviours->apply($this, __FUNCTION__, $query);
     }
 
-    /**
-     * @param EntityInterface $entity
-     *
-     * @return bool
-     * @throws \Exception
-     */
-    public function save(EntityInterface $entity, $withRelations = true)
+    public function getReadConnection(): Connection
     {
-        $this->assertCanPersistEntity($entity);
-        $action = $this->newSaveAction($entity, ['relations' => $withRelations]);
-
-        $this->orm->getConnectionLocator()->lockToWrite(true);
-        $this->getWriteConnection()->beginTransaction();
-        try {
-            $action->run();
-            $this->getWriteConnection()->commit();
-            $this->orm->getConnectionLocator()->lockToWrite(false);
-            return true;
-        } catch (\Exception $e) {
-            $this->getWriteConnection()->rollBack();
-            $this->orm->getConnectionLocator()->lockToWrite(false);
-            throw $e;
-        }
+        return $this->connectionLocator->getRead();
     }
 
-    public function newSaveAction(EntityInterface $entity, $options): Update
+    public function getWriteConnection(): Connection
     {
-        if (! $this->getEntityAttribute($entity, $this->primaryKey)) {
-            $action = new Insert($this, $entity, $options);
-        } else {
-            $action = new Update($this, $entity, $options);
-        }
-
-        return $this->behaviours->apply($this, 'save', $action);
+        return $this->connectionLocator->getWrite();
     }
 
-    public function delete(EntityInterface $entity, $withRelations = true)
+    protected function runActionInTransaction(Action\BaseAction $action)
     {
-        $this->assertCanPersistEntity($entity);
-
-        $action = $this->newDeleteAction($entity, ['relations' => $withRelations]);
-
-        $this->orm->getConnectionLocator()->lockToWrite(true);
+        $this->connectionLocator->lockToWrite(true);
         $this->getWriteConnection()->beginTransaction();
         try {
             $action->run();
@@ -542,39 +221,5 @@ class Mapper
             $this->getWriteConnection()->rollBack();
             throw $e;
         }
-    }
-
-    public function newDeleteAction(EntityInterface $entity, $options)
-    {
-        $action = new Delete($this, $entity, $options);
-
-        return $this->behaviours->apply($this, 'delete', $action);
-    }
-
-    protected function assertCanPersistEntity($entity)
-    {
-        if (! $entity || ! $entity instanceof $this->entityClass) {
-            throw new \InvalidArgumentException(sprintf(
-                'Mapper %s can only persist entity of class %s. %s class provided',
-                __CLASS__,
-                $this->entityClass,
-                get_class($entity)
-            ));
-        }
-    }
-
-    public function getReadConnection()
-    {
-        return $this->orm->getConnectionLocator()->getRead();
-    }
-
-    public function getWriteConnection()
-    {
-        return $this->orm->getConnectionLocator()->getWrite();
-    }
-
-    public function getCasts()
-    {
-        return $this->casts;
     }
 }

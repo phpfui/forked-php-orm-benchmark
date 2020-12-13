@@ -1,5 +1,11 @@
 {
     "require": {
-        "siriusphp/orm": "^1.0.0"
+        "siriusphp/orm": "^2.0.0",
+        "nette/php-generator": "^3.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "app\\": "src/"
+        }
     }
 }

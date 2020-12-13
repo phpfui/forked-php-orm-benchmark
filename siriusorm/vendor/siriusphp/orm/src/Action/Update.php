@@ -6,9 +6,8 @@ namespace Sirius\Orm\Action;
 use Sirius\Orm\Entity\StateEnum;
 use Sirius\Orm\Helpers\Arr;
 
-class Update extends BaseAction
+class Update extends Save
 {
-    protected $entityId;
     protected $entityState;
 
     protected $extraColumns = [];
@@ -38,42 +37,34 @@ class Update extends BaseAction
             return;
         }
 
-        $this->entityId    = $this->entity->getPk();
-        $this->entityState = $this->entity->getPersistenceState();
+        $this->entityState = $this->entity->getState();
 
         $connection = $this->mapper->getWriteConnection();
 
-        $columns = $this->mapper->extractFromEntity($this->entity);
-        $columns = Arr::only($columns, array_keys($this->entity->getChanges()));
+        $columns = $this->entityHydrator->extract($this->entity);
+        $changes = Arr::renameKeys($this->entity->getChanges(), array_flip($this->mapper->getConfig()->getColumnAttributeMap()));
+        $columns = Arr::only($columns, array_keys($changes));
         $columns = array_merge(
             $columns,
             $this->extraColumns,
-            $this->mapper->getGuards()
+            $this->mapper->getConfig()->getGuards()
         );
-        $columns = Arr::except($columns, $this->mapper->getPrimaryKey());
+        $columns = Arr::except($columns, $this->mapper->getConfig()->getPrimaryKey());
 
         if (count($columns) > 0) {
             $updateSql = new \Sirius\Sql\Update($connection);
-            $updateSql->table($this->mapper->getTable())
+            $updateSql->table($this->mapper->getConfig()->getTable())
                       ->columns($columns)
                       ->whereAll($conditions, false);
             $updateSql->perform();
         }
     }
 
-    public function revert()
-    {
-        if (! $this->hasRun) {
-            return;
-        }
-        $this->entity->setPersistenceState($this->entityState);
-    }
-
     public function onSuccess()
     {
         foreach ($this->extraColumns as $col => $value) {
-            $this->mapper->setEntityAttribute($this->entity, $col, $value);
+            $this->entityHydrator->set($this->entity, $col, $value);
         }
-        $this->entity->setPersistenceState(StateEnum::SYNCHRONIZED);
+        $this->entity->setState(StateEnum::SYNCHRONIZED);
     }
 }

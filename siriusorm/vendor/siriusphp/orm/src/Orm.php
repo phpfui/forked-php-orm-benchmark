@@ -4,14 +4,15 @@ declare(strict_types=1);
 namespace Sirius\Orm;
 
 use InvalidArgumentException;
-use Sirius\Orm\Collection\Collection;
-use Sirius\Orm\Entity\EntityInterface;
-use Sirius\Orm\Helpers\Str;
+use Psr\EventDispatcher\EventDispatcherInterface;
+use Sirius\Orm\Behaviour\Events;
+use Sirius\Orm\Contract\MapperLocatorInterface;
+use Sirius\Orm\Entity\CollectionCaster;
+use Sirius\Orm\Entity\EntityCaster;
 use Sirius\Orm\Relation\Relation;
 use Sirius\Orm\Relation\RelationBuilder;
-use Sirius\Orm\Relation\RelationConfig;
 
-class Orm implements MapperLocator
+class Orm
 {
     /**
      * @var array
@@ -34,49 +35,75 @@ class Orm implements MapperLocator
     protected $castingManager;
 
     /**
+     * @var MapperLocatorInterface|null
+     */
+    protected $mapperLocator;
+    /**
      * @var RelationBuilder
      */
     protected $relationBuilder;
+    /**
+     * @var EventDispatcherInterface|null
+     */
+    protected $events;
 
     public function __construct(
         ConnectionLocator $connectionLocator,
-        CastingManager $castingManager = null
+        RelationBuilder $relationBuilder = null,
+        CastingManager $castingManager = null,
+        EventDispatcherInterface $events = null,
+        MapperLocatorInterface $mapperLocator = null
     ) {
         $this->connectionLocator = $connectionLocator;
-
-        if (! $castingManager) {
-            $castingManager = new CastingManager();
-        }
-        $this->castingManager = $castingManager;
-
-        $this->relationBuilder = new RelationBuilder($this);
+        $this->relationBuilder   = $relationBuilder ?? new RelationBuilder();
+        $this->castingManager    = $castingManager ?? new CastingManager();
+        $this->events            = $events;
+        $this->mapperLocator     = $mapperLocator;
     }
 
-    public function register($name, $mapperOrConfigOrFactory): self
+    /**
+     * Register a mapper with a name
+     *
+     * @param string $name
+     * @param Mapper|callable|string $mapper
+     */
+    public function register(string $name, $mapper)
     {
-        if ($mapperOrConfigOrFactory instanceof MapperConfig || is_callable($mapperOrConfigOrFactory)) {
-            $this->lazyMappers[$name] = $mapperOrConfigOrFactory;
-        } elseif ($mapperOrConfigOrFactory instanceof Mapper) {
-            $this->mappers[$name] = $mapperOrConfigOrFactory;
-            $mapperOrConfigOrFactory->registerCasts($this->castingManager);
+        if ($mapper instanceof Mapper) {
+            $this->mappers[$name] = $mapper;
+        } elseif (is_callable($mapper) || is_string($mapper) || $mapper instanceof MapperConfig) {
+            $this->lazyMappers[$name] = $mapper;
         } else {
-            throw new InvalidArgumentException('$mapperOrConfigOrFactory must be a Mapper instance, 
-            a MapperConfig instance or a callable that returns a Mapper instance');
+            throw new \InvalidArgumentException('The $mapper argument must be a Mapper object, 
+                a MapperConfig object, a callable or a string that can be used by the mapper locator');
         }
 
-        return $this;
+        $this->addCastingMethodsForMapper($name);
     }
 
+    /**
+     * Check if a mapper is registered within the ORM
+     *
+     * @param $name
+     *
+     * @return bool
+     */
     public function has($name): bool
     {
         return isset($this->mappers[$name]) || isset($this->lazyMappers[$name]);
     }
 
+    /**
+     * Return a mapper instance by it's registered name
+     *
+     * @param $name
+     *
+     * @return Mapper
+     */
     public function get($name): Mapper
     {
         if (isset($this->lazyMappers[$name])) {
-            $this->mappers[$name] = $this->buildMapper($this->lazyMappers[$name]);
-            $this->mappers[$name]->registerCasts($this->castingManager);
+            $this->mappers[$name] = $this->createMapper($name);
             unset($this->lazyMappers[$name]);
         }
 
@@ -87,45 +114,9 @@ class Orm implements MapperLocator
         return $this->mappers[$name];
     }
 
-    public function save($mapperName, EntityInterface $entity, $withRelations = true)
+    public function getCastingManager(): CastingManager
     {
-        return $this->get($mapperName)->save($entity, $withRelations);
-    }
-
-    public function delete($mapperName, EntityInterface $entity, $withRelations = true)
-    {
-        return $this->get($mapperName)->delete($entity, $withRelations);
-    }
-
-    public function find($mapperName, $id, array $load = [])
-    {
-        return $this->get($mapperName)->find($id, $load);
-    }
-
-    public function select($mapperName): Query
-    {
-        return $this->get($mapperName)->newQuery();
-    }
-
-    public function createRelation(Mapper $nativeMapper, $name, $options): Relation
-    {
-        return $this->relationBuilder->newRelation($nativeMapper, $name, $options);
-    }
-
-    private function buildMapper($mapperConfigOrFactory): Mapper
-    {
-        if ($mapperConfigOrFactory instanceof MapperConfig) {
-            return Mapper::make($this, $mapperConfigOrFactory);
-        }
-
-        $mapper = $mapperConfigOrFactory($this);
-        if (! $mapper instanceof Mapper) {
-            throw new InvalidArgumentException(
-                'The mapper generated from the factory is not a valid `Mapper` instance'
-            );
-        }
-
-        return $mapper;
+        return $this->castingManager;
     }
 
     public function getConnectionLocator(): ConnectionLocator
@@ -133,11 +124,44 @@ class Orm implements MapperLocator
         return $this->connectionLocator;
     }
 
-    /**
-     * @return CastingManager
-     */
-    public function getCastingManager(): CastingManager
+    public function createRelation(Mapper $mapper, string $name, array $options): Relation
     {
-        return $this->castingManager;
+        return $this->relationBuilder->build($this, $mapper, $name, $options);
+    }
+
+    protected function createMapper($name): Mapper
+    {
+        $definition = $this->lazyMappers[$name];
+
+        $mapper = null;
+        if (is_callable($definition)) {
+            $mapper = $definition($this);
+        } elseif ($this->mapperLocator) {
+            $mapper = $this->mapperLocator->get($definition);
+        }
+
+        if (! $mapper) {
+            throw new InvalidArgumentException(
+                'The mapper could not be generated/retrieved.'
+            );
+        }
+
+        if (! $mapper instanceof Mapper) {
+            throw new InvalidArgumentException(
+                'The mapper generated from the factory is not a valid `Mapper` instance.'
+            );
+        }
+
+        if ($this->events) {
+            $mapper->use(new Events($this->events, $name));
+        }
+
+        return $mapper;
+    }
+
+    protected function addCastingMethodsForMapper(string $name)
+    {
+        $this->castingManager->register('entity_' . $name, new EntityCaster($this, $name));
+        $this->castingManager->register('collection_of_' . $name, new CollectionCaster($this, $name));
     }
 }

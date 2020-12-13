@@ -16,8 +16,8 @@ class QueryHelper
 
     public static function joinCondition($firsTable, $firstColumns, $secondTable, $secondColumns)
     {
-        $firstColumns = (array) $firstColumns;
-        $secondColumns = (array) $secondColumns;
+        $firstColumns  = (array)$firstColumns;
+        $secondColumns = (array)$secondColumns;
 
         $parts = [];
         foreach ($firstColumns as $k => $col) {

@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace Sirius\Orm\Action;
 
+use Sirius\Orm\Entity\StateEnum;
 use Sirius\Orm\Helpers\Arr;
 
 class Insert extends Update
@@ -14,31 +15,30 @@ class Insert extends Update
 
     protected function execute()
     {
-        $this->entityId    = $this->entity->getPk();
-        $this->entityState = $this->entity->getPersistenceState();
+        $this->entityId    = $this->entityHydrator->getPk($this->entity);
+        $this->entityState = $this->entity->getState();
 
         $connection = $this->mapper->getWriteConnection();
 
         $columns = array_merge(
-            $this->mapper->extractFromEntity($this->entity),
+            $this->entityHydrator->extract($this->entity),
             $this->extraColumns,
-            $this->mapper->getGuards()
+            $this->mapper->getConfig()->getGuards()
         );
-        $columns = Arr::except($columns, $this->mapper->getPrimaryKey());
+        $columns = Arr::except($columns, $this->mapper->getConfig()->getPrimaryKey());
 
         $insertSql = new \Sirius\Sql\Insert($connection);
-        $insertSql->into($this->mapper->getTable())
+        $insertSql->into($this->mapper->getConfig()->getTable())
                   ->columns($columns);
         $insertSql->perform();
-        $this->entity->setPk($connection->lastInsertId());
-    }
 
-    public function revert()
-    {
-        if (! $this->hasRun) {
-            return;
-        }
-        $this->entity->setPK($this->entityId);
-        $this->entity->setPersistenceState($this->entityState);
+        /**
+         * We need to set the ID of the entity here because
+         * other actions in the stack might need it
+         * For example, on one-to-many relations when persisting the "parent",
+         * the actions that persist the "children" have to know about the parent's ID
+         */
+        $this->entityHydrator->setPk($this->entity, (int) $connection->lastInsertId());
+        $this->entity->setState(StateEnum::SYNCHRONIZED);
     }
 }

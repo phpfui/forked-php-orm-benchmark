@@ -3,10 +3,11 @@ declare(strict_types=1);
 
 namespace Sirius\Orm\Relation;
 
-use Sirius\Orm\Entity\EntityInterface;
+use Sirius\Orm\Contract\EntityInterface;
+use Sirius\Orm\Contract\HydratorInterface;
 use Sirius\Orm\Entity\LazyAggregate;
+use Sirius\Orm\Entity\LazyValue;
 use Sirius\Orm\Entity\Tracker;
-use Sirius\Orm\Mapper;
 use Sirius\Orm\Query;
 
 class Aggregate
@@ -15,20 +16,33 @@ class Aggregate
      * @var string
      */
     protected $name;
+
     /**
      * @var Relation
      */
     protected $relation;
+
     /**
      * @var array
      */
     protected $options;
 
+    /**
+     * @var HydratorInterface
+     */
+    protected $entityHydrator;
+
+    /**
+     * @var HydratorInterface
+     */
+    protected $foreignEntityHydrator;
+
     public function __construct(string $name, Relation $relation, array $options)
     {
-        $this->name = $name;
-        $this->relation = $relation;
-        $this->options = $options;
+        $this->name           = $name;
+        $this->relation       = $relation;
+        $this->options        = $options;
+        $this->entityHydrator = $relation->getNativeMapper()->getHydrator();
     }
 
     public function getQuery(Tracker $tracker)
@@ -52,32 +66,42 @@ class Aggregate
 
         $query->groupBy(...array_values($keys));
 
+        /**
+         * the query callback for the relation or for the aggregate might implement ORDER_BY
+         * and that would cause issues with MySQL's sql_mode=ONLY_FULL_GROUP_BY
+         */
+        $query->resetOrderBy();
+
+        /**
+         * just in case a query callback is setting limits
+         */
+        $query->resetLimit();
+
         return $query;
     }
 
     public function attachLazyAggregateToEntity(EntityInterface $entity, Tracker $tracker)
     {
-        $valueLoader = new LazyAggregate($entity, $tracker, $this);
-        $this->relation->getNativeMapper()->setEntityAttribute($entity, $this->name, $valueLoader);
+        $valueLoader = $tracker->getLazyAggregate($this);
+        $this->entityHydrator->set($entity, $this->name, $valueLoader);
     }
 
     public function attachAggregateToEntity(EntityInterface $entity, array $results)
     {
-        $found = null;
+        $value = null;
         foreach ($results as $row) {
             if ($this->entityMatchesRow($entity, $row)) {
-                $found = $row;
-                break;
+                $value = $row[$this->name] ?? null;
             }
         }
-        $this->relation
-            ->getNativeMapper()
-            ->setEntityAttribute($entity, $this->name, $found ? $found[$this->name] : null);
+        // we have to do this because some properties may be read only (ie: there is no setter)
+        // using a LazyValue is the only way for the hydrator to inject a value
+        $this->entityHydrator->set($entity, $this->name, new LazyValue($value));
     }
 
     public function isLazyLoad()
     {
-        return !isset($this->options[RelationConfig::LOAD_STRATEGY]) ||
+        return ! isset($this->options[RelationConfig::LOAD_STRATEGY]) ||
                $this->options[RelationConfig::LOAD_STRATEGY] == RelationConfig::LOAD_LAZY;
     }
 
@@ -96,8 +120,8 @@ class Aggregate
     {
         $keys = $this->relation->getKeyPairs();
         foreach ($keys as $nativeCol => $foreignCol) {
-            $entityValue  = $this->relation->getNativeMapper()->getEntityAttribute($entity, $nativeCol);
-            $rowValue = $row[$foreignCol];
+            $entityValue = $this->entityHydrator->get($entity, $nativeCol);
+            $rowValue    = $row[$foreignCol];
             // if both native and foreign key values are present (not unlinked entities) they must be the same
             // otherwise we assume that the entities can be linked together
             if ($entityValue && $rowValue && $entityValue != $rowValue) {
