@@ -1,6 +1,6 @@
 <?php
 
-require_once dirname(__FILE__) . '/sfTimer.php';
+require_once __DIR__ . '/sfTimer.php';
 
 abstract class AbstractTestSuite
 {
