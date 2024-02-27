@@ -120,6 +120,8 @@ class PHPFUI_ORMTestSuite extends AbstractTestSuite
 		$product->tags = $tag1;
 		$product->tags = $tag2;
 
+		$product->insert();
+
 		return $product;
     }
 
@@ -212,12 +214,14 @@ class PHPFUI_ORMTestSuite extends AbstractTestSuite
 
   public function test_relations()
     {
-//		$product = Product::with('category', 'tags', 'images')->find(1);
-//		$lastRun       = self::NB_TEST - 1;
-//		$this->assertEquals('New product name ' . $lastRun, $product->name);
-//		$this->assertEquals('New category name ' . $lastRun, $product->category->name);
-//		$this->assertEquals('new_path_' . $lastRun . '.jpg', $product->images[0]->path);
-//		$this->assertEquals('New tag name ' . $lastRun, $product->tags[0]->name);
-//		$this->assertEquals('Tag #t2_0', $product->tags[1]->name);
+		$lastRun = self::NB_TEST - 1;
+		$product = new \App\Record\Product($lastRun);
+		$this->assertEquals('New product name ' . $lastRun, $product->name);
+		$this->assertEquals('New category name ' . $lastRun, $product->category->name);
+		$this->assertEquals('new_path_' . $lastRun . '.jpg', $product->images->current()->path);
+		$tags = $product->tags;
+		$this->assertEquals('New tag name ' . $lastRun, $tags->current()->name);
+		$tags->next();
+		$this->assertEquals('Tag #t2_497', $tags->current()->name);
     }
   }

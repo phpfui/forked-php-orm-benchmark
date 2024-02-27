@@ -22,6 +22,8 @@ class AtlasOrmTestSuite extends AbstractTestSuite
      */
     private $atlas;
 
+	private $product;
+
     function initialize()
     {
         $loader = require_once "vendor/autoload.php";
